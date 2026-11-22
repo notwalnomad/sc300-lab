@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SC-300 Lab Inbox</title>
+<style>
+:root{
+  --bg:#0f1115;--panel:#161a21;--panel2:#1c212a;--line:#2a313c;--text:#e6e9ef;--muted:#9aa4b2;
+  --accent:#6ea8fe;--real:#3fb950;--sim:#a78bfa;--phish:#f85149;--warn:#d29922;--ok:#3fb950;
+  --banner-bg:#2d1f05;--banner-text:#f0c674;--banner-line:#4a3410;
+  --code-bg:#0b0d11;--good-bg:#0f2a17;--bad-bg:#2a1214;--shadow:#0008;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{display:flex;flex-direction:column}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer;color:inherit}
+button:disabled{cursor:not-allowed;opacity:.5}
+code{background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:12.5px;overflow-wrap:anywhere}
+.muted{color:var(--muted)}
+.banner{background:var(--banner-bg);color:var(--banner-text);text-align:center;font-size:12px;padding:4px 8px;border-bottom:1px solid var(--banner-line);flex:none}
+
+/* ---- top bar ---- */
+.top{display:flex;align-items:center;gap:14px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);flex:none;flex-wrap:wrap}
+.brand{font-weight:650;font-size:15px;white-space:nowrap}
+.brand small{color:var(--muted);font-weight:400;margin-left:6px}
+.search{flex:1;min-width:160px;max-width:460px;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:6px 10px;font:inherit}
+.score{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;background:var(--panel2);white-space:nowrap}
+.pill b{color:var(--accent)} .pill.good b{color:var(--ok)} .pill.bad b{color:var(--phish)}
+
+/* ---- panes ---- */
+.app{flex:1;min-height:0;display:grid;grid-template-columns:230px 380px 1fr}
+.nav,.list,.reader{overflow:auto;min-height:0}
+.nav{background:var(--panel);border-right:1px solid var(--line);padding:12px 10px}
+.list{border-right:1px solid var(--line)}
+.app.wide .list{grid-column:2 / span 2;border-right:0}
+.app.wide .reader{display:none}
+
+.newbtn{display:block;width:100%;background:var(--accent);color:var(--bg);border:0;border-radius:8px;padding:9px 10px;font-weight:650;margin-bottom:6px}
+.fgroup{margin-top:10px}
+.navh{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:12px 10px 4px}
+.folders{display:flex;flex-direction:column;gap:2px}
+.folder{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:5px 10px;color:var(--text)}
+.folder:hover{background:var(--panel2)}
+.folder.on{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
+.folder .n{font-size:12px;color:var(--accent);font-weight:650}
+.dayb{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:5px 10px;color:var(--text);font-size:13px}
+.dayb:hover{background:var(--panel2)}
+.dayb.on{color:var(--accent)}
+.dayb small{color:var(--muted)}
+.daydesc{color:var(--muted);font-size:12px;margin:6px 10px 0}
+details.settings{margin:16px 4px 0;font-size:12.5px;color:var(--muted)}
+details.settings summary{cursor:pointer;padding:4px 6px}
+.settings label{display:flex;gap:6px;align-items:center;margin:8px 6px 4px}
+.settings .row{display:flex;gap:6px;margin:0 6px}
+.settings input[type=text]{flex:1;min-width:0;background:var(--code-bg);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 6px;font:inherit}
+.settings .row button,.settings .reset{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:4px 8px}
+.settings .reset{margin:10px 6px 0;width:calc(100% - 12px)}
+.injb{display:block;width:100%;text-align:left;background:none;border:1px dashed var(--banner-line);border-radius:8px;padding:6px 10px;margin:4px 0;color:var(--text);font-size:12.5px}
+.injb small{display:block;color:var(--muted);font-size:11.5px}
+.injb:hover:not(:disabled){border-color:var(--warn)}
+.injb.done{opacity:.55}
+.box.why{border-left:3px solid var(--sim)}
+.toast .tb{display:flex;gap:6px;margin-top:8px}
+.toast .tb button{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:4px}
+.toast input{width:100%;margin-top:6px;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:4px 6px;font:inherit}
+.legend{margin:14px 6px 0;font-size:12px;color:var(--muted)}
+.legend div{margin:5px 0}
+
+/* ---- mail list ---- */
+.lhead{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lhead h2{margin:0;font-size:16px}
+.lhead span{color:var(--muted);font-size:12px}
+.mail{display:flex;gap:10px;padding:10px 14px 10px 12px;border-bottom:1px solid var(--line);cursor:pointer;border-left:3px solid transparent}
+.mail:hover,.mail:focus{background:var(--panel);outline:none}
+.mail.sel{background:var(--panel2);border-left-color:var(--accent)}
+.mail .mc{flex:1;min-width:0}
+.mail .r1{display:flex;justify-content:space-between;gap:6px;font-size:13px}
+.mail .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail .time{color:var(--muted);font-size:12px;white-space:nowrap}
+.mail.unread .who,.mail.unread .subj{font-weight:700}
+.mail.unread .time{color:var(--accent)}
+.mail .subj{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail .prev{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail .chips{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap}
+.av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--bg);background:var(--c,var(--muted))}
+.av.sys{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.empty{color:var(--muted);padding:40px 18px;text-align:center}
+
+.tag{display:inline-block;font-size:10.5px;font-weight:600;padding:0 7px;border-radius:999px;border:1px solid;white-space:nowrap;line-height:1.6}
+.tag.real,.tag.good{color:var(--ok);border-color:var(--ok)}
+.tag.sim{color:var(--sim);border-color:var(--sim)}
+.tag.inj{color:var(--warn);border-color:var(--warn);border-style:dashed}
+.tag.P1,.tag.bad,.tag.ext,.tag.phish{color:var(--phish);border-color:var(--phish)}
+.tag.P2,.tag.prog{color:var(--warn);border-color:var(--warn)}
+.tag.P3,.tag.skip{color:var(--muted);border-color:var(--muted)}
+.tag.open{color:var(--accent);border-color:var(--accent)}
+
+/* ---- mail reader ---- */
+.reader{padding:18px 26px 40px}
+.back{display:none;background:none;border:1px solid var(--line);border-radius:6px;padding:3px 10px;margin-bottom:10px;color:var(--muted)}
+.rsubj{margin:0 0 6px;font-size:19px;line-height:1.3}
+.rchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;color:var(--muted);font-size:12px;align-items:center}
+.extwarn{background:var(--banner-bg);color:var(--banner-text);border:1px solid var(--banner-line);border-radius:8px;padding:7px 12px;font-size:12.5px;margin:0 0 12px}
+.msg{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);margin-bottom:12px}
+.mh{display:flex;gap:10px;align-items:flex-start;padding:12px 16px 0}
+.mh .who{flex:1;min-width:0;font-size:13px}
+.mh .who b{font-size:14px}
+.mh .addr{color:var(--muted);overflow-wrap:anywhere}
+.mh .to{color:var(--muted);font-size:12px}
+.mh .time{color:var(--muted);font-size:12px;white-space:nowrap}
+.mb{padding:10px 16px 14px 60px}
+.mb p:first-child{margin-top:0}.mb p:last-child{margin-bottom:0}
+.quote{border-left:3px solid var(--line);padding:4px 0 4px 12px;margin:10px 0}
+table.kv{border-collapse:collapse;font-size:13px;margin:6px 0}
+table.kv td{padding:2px 14px 2px 0;vertical-align:top}
+table.kv td:first-child{color:var(--muted);white-space:nowrap}
+.box{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;background:var(--panel)}
+.box h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.btn{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 12px;color:var(--text);text-decoration:none;font-size:13px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:650}
+
+/* ---- service desk list ---- */
+.tablewrap{overflow-x:auto}
+table.rlist{width:100%;border-collapse:collapse;font-size:13px}
+table.rlist th,table.rlist td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.rlist th{color:var(--muted);font-weight:600;font-size:12px;background:var(--panel)}
+table.rlist td.sd{white-space:normal;min-width:220px}
+table.rlist tr.rec{cursor:pointer}
+table.rlist tr.rec:hover td,table.rlist tr.rec:focus td{background:var(--panel);outline:none}
+table.rlist .no{color:var(--accent);font-weight:600}
+
+/* ---- record form ---- */
+.form{padding:0 0 40px}
+.fbar{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:6px;width:30px;height:30px;font-size:18px;line-height:1;color:var(--muted)}
+.ftitle{line-height:1.2}
+.ftitle small{display:block;color:var(--muted);font-size:11.5px}
+.ftitle b{font-size:17px}
+.fact{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fbody{padding:14px 18px}
+.sla{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.sla .bar{flex:1;min-width:120px;height:6px;background:var(--panel2);border-radius:99px;overflow:hidden}
+.sla .bar i{display:block;height:100%}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+.fld label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:2px}
+.fv{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:5px 9px;min-height:32px;overflow-wrap:anywhere}
+.fld.wide{grid-column:1 / -1}
+.fv.rich{padding:10px 12px}
+.fv.rich p:first-child{margin-top:0}.fv.rich p:last-child{margin-bottom:0}
+.sec{margin-top:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.sec > h3{margin:0;padding:9px 14px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.sec .in{padding:10px 14px}
+table.tasks{width:100%;border-collapse:collapse;font-size:13px}
+table.tasks td{padding:8px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tasks tr:last-child td{border-bottom:0}
+table.tasks td.cb{width:30px;padding-right:0}
+table.tasks td.tn{white-space:nowrap;color:var(--accent);font-size:12px;width:1%}
+table.tasks td.ts{white-space:nowrap;width:1%}
+table.tasks tr.done td.tx{color:var(--muted)}
+.notice{color:var(--warn);font-size:12.5px;padding:8px 14px}
+details.hint summary{cursor:pointer;color:var(--sim);font-size:13px}
+.opt{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;margin:6px 0;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+.opt:hover:not(:disabled){border-color:var(--warn)}
+.opt.picked{border-color:var(--accent)}
+.opt .q{color:var(--muted);font-size:12.5px}
+.need{font-size:12px;color:var(--warn);margin-top:4px}
+.preview{margin-top:10px;border:1px solid var(--accent);border-radius:8px;background:var(--code-bg);padding:10px 12px;font-size:13px}
+.preview .ca{display:flex;gap:8px;margin-top:10px}
+.coach{border-left:3px solid var(--sim)}
+.coach.good{border-left-color:var(--ok);background:var(--good-bg)}
+.coach.bad{border-left-color:var(--phish);background:var(--bad-bg)}
+.coach .verdict{font-weight:650;margin-bottom:4px}
+.wn{display:flex;gap:8px;margin-bottom:10px}
+.wn textarea{flex:1;min-height:38px;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;color:var(--text);font:inherit;padding:6px 8px;resize:vertical}
+.act{border-left:3px solid var(--line);padding:4px 0 4px 10px;margin:8px 0;font-size:13px}
+.act .ah{font-size:12px;color:var(--muted)}
+.act.note{border-left-color:var(--warn)}
+.act.comment{border-left-color:var(--accent)}
+.act.caller{border-left-color:var(--real)}
+
+.term{border-bottom:1px dotted var(--accent);cursor:help;position:relative}
+.term:hover::after,.term:focus::after{content:attr(data-tip);position:absolute;left:0;top:1.6em;z-index:9;width:min(280px,70vw);background:var(--code-bg);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.45;font-weight:400;text-transform:none;letter-spacing:0}
+
+/* ---- audit ---- */
+table.audit{width:100%;border-collapse:collapse;font-size:12.5px}
+table.audit th,table.audit td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+table.audit th{color:var(--muted);font-weight:600;position:sticky;top:45px;background:var(--bg)}
+table.audit tr.bad td{background:var(--bad-bg)}
+.note{font-size:12.5px;color:var(--muted);padding:0 14px}
+
+/* ---- toasts ---- */
+.toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:50;max-width:min(360px,calc(100vw - 36px))}
+.toast{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13px;box-shadow:0 6px 24px var(--shadow);animation:in .25s ease}
+.toast.alert{border-left-color:var(--phish)}
+.toast b{display:block;margin-bottom:2px}
+@keyframes in{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---- narrow screens: one pane at a time ---- */
+@media (max-width:1000px){
+  html,body{height:auto}
+  .app{display:block}
+  .nav{border-right:0;border-bottom:1px solid var(--line);padding:10px 16px}
+  .fgroup{display:flex;gap:4px;align-items:center;overflow-x:auto;margin-top:6px}
+  .navh{margin:0 4px 0 0;white-space:nowrap}
+  .folders{flex-direction:row;gap:4px}
+  .folder{width:auto;white-space:nowrap;gap:6px;border:1px solid var(--line)}
+  .daydesc,.dfull{display:none}
+  .days{display:flex;gap:4px;overflow-x:auto;margin-top:6px}
+  .dayb{width:auto;white-space:nowrap;gap:6px;border:1px solid var(--line)}
+  .dayb.on{border-color:var(--accent)}
+  #injects{display:flex;gap:6px;overflow-x:auto}
+  .injb{width:auto;white-space:nowrap;margin:6px 0 0}
+  .list{border-right:0}
+  .reader{display:none;padding:14px 16px 40px}
+  .app.reading .nav,.app.reading .list{display:none}
+  .app.reading .reader{display:block}
+  .back{display:inline-block}
+  .mb{padding:10px 14px 14px}
+  .score{margin-left:0}
+  .fgrid{grid-template-columns:1fr}
+  table.tasks tr{display:grid;grid-template-columns:28px 1fr auto;border-bottom:1px solid var(--line)}
+  table.tasks tr:last-child{border-bottom:0}
+  table.tasks td{border:0;padding:8px 10px 4px;width:auto}
+  table.tasks td.tx{grid-column:2 / -1;grid-row:2;padding:0 10px 10px}
+  .fbar,.fbody{padding-left:16px;padding-right:16px}
+  .toast{padding:7px 10px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="banner">TRAINING SIMULATION. Every person, message, record and sender here is fictional, made up for SC-300 practice. Nothing here connects to a real tenant.</div>
+<div class="top">
+  <div class="brand">Lab Mail <small>+ Service desk</small></div>
+  <input class="search" id="q" type="search" placeholder="Search mail and records" aria-label="Search mail and records">
+  <div class="score">
+    <span class="pill">Open <b id="cOpen">0</b></span>
+    <span class="pill good">Correct <b id="cGood">0</b></span>
+    <span class="pill bad">Mistakes <b id="cBad">0</b></span>
+    <span class="pill">Threats handled <b id="cThreat">0</b>/<span id="cThreatTotal">0</span></span>
+    <span class="pill">Closed <b id="cClosed">0</b>/<span id="cTotal">0</span></span>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <nav class="nav">
+    <button class="newbtn" id="next" title="Fetch the next record in today's queue">↻ Get next ticket</button>
+    <div id="folders"></div>
+    <div class="navh">Lab day</div>
+    <div class="days" id="days"></div>
+    <div class="daydesc" id="dayDesc"></div>
+    <div class="navh" id="injh">⚡ Injects</div>
+    <div id="injects"></div>
+    <details class="settings">
+      <summary>Settings and help</summary>
+      <label><input type="checkbox" id="auto"> Deliver the next ticket when I close one</label>
+      <label for="dom">Your tenant domain</label>
+      <div class="row"><input type="text" id="dom" spellcheck="false" autocomplete="off"><button id="domSave">Save</button></div>
+      <button class="reset" id="reset">Reset everything</button>
+      <div class="legend">
+        <div><b>How it works.</b> New work arrives as a service-desk record (incident, requested item or change), and the desk emails you about it. Open the record, assign it to yourself, work its tasks in your <b>real lab tenant</b>, then resolve it with the right outcome. Some requests should be refused.</div>
+        <div><span class="tag inj">⚡ Inject</span> A surprise event you (or your instructor) can trigger any time during that day. It raises an incident. Some injects are threats.</div>
+        <div><span class="tag real">REAL-WORLD</span> A real tenant can send this notification (most need setting up first).</div>
+        <div><span class="tag sim">AUDIT-ONLY</span> Real tenants log this but don't email it. It's shown as mail so you notice it.</div>
+        <div>Never type real passwords or MFA codes here.</div>
+      </div>
+    </details>
+  </nav>
+  <section class="list" id="list"></section>
+  <section class="reader" id="reader"></section>
+</div>
+<div id="audit" hidden></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ================= HELPERS ================= */
+const T = (word, tip) => `<span class="term" tabindex="0" data-tip="${tip.replace(/"/g,'&quot;')}">${word}</span>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LEARN = {
+  audit:     ["Entra audit logs","https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-audit-logs"],
+  signins:   ["Entra sign-in logs","https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-ins"],
+  leastpriv: ["Least privileged roles by task","https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/delegate-by-task"],
+  licenses:  ["Assign licenses in the Microsoft 365 admin center","https://learn.microsoft.com/en-us/entra/fundamentals/license-users-groups"],
+  budget:    ["Create and manage budgets","https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-create-budgets"],
+  au:        ["Assign roles scoped to an administrative unit","https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/admin-units-assign-roles"],
+  b2binvite: ["Add B2B guest users","https://learn.microsoft.com/en-us/entra/external-id/add-users-administrator"],
+  b2b:       ["B2B invitation redemption","https://learn.microsoft.com/en-us/entra/external-id/redemption-experience"],
+  b2breset:  ["Reset a guest's redemption status","https://learn.microsoft.com/en-us/entra/external-id/reset-redemption-status"],
+  revoke:    ["Revoke user access in an emergency","https://learn.microsoft.com/en-us/entra/identity/users/users-revoke-access"],
+  sync:      ["What is Entra Cloud Sync?","https://learn.microsoft.com/en-us/entra/identity/hybrid/cloud-sync/what-is-cloud-sync"],
+  authmethods:["Manage authentication methods","https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-methods-manage"],
+  numbermatch:["Number matching in MFA push notifications","https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-mfa-number-match"],
+  tap:       ["Temporary Access Pass","https://learn.microsoft.com/en-us/entra/identity/authentication/howto-authentication-temporary-access-pass"],
+  ro:        ["Conditional Access report-only mode","https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-conditional-access-report-only"],
+  breakglass:["Manage emergency access accounts","https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/security-emergency-access"],
+  secdefaults:["Security defaults","https://learn.microsoft.com/en-us/entra/fundamentals/security-defaults"],
+  samlcert:  ["Manage certificates for federated SSO","https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/manage-certificates-for-federated-single-sign-on"],
+  assignapp: ["Assign users and groups to an app","https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/assign-user-or-group-access-portal"],
+  appobjects:["Application and service principal objects","https://learn.microsoft.com/en-us/entra/identity-platform/app-objects-and-service-principals"],
+  devicecode:["OAuth 2.0 device authorization grant","https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code"],
+  graph:     ["Microsoft Graph permissions reference","https://learn.microsoft.com/en-us/graph/permissions-reference"],
+  consent:   ["User and admin consent overview","https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/user-admin-consent-overview"],
+  consentwf: ["Admin consent workflow","https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/configure-admin-consent-workflow"],
+  illicit:   ["Detect and remediate illicit consent grants","https://learn.microsoft.com/en-us/defender-office-365/detect-and-remediate-illicit-consent-grants"],
+  restore:   ["Restore or remove a recently deleted user","https://learn.microsoft.com/en-us/entra/fundamentals/users-restore"],
+  pim:       ["PIM email notifications","https://learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management/pim-email-notifications"],
+  pimassign: ["Assign Entra roles in PIM","https://learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management/pim-how-to-add-role-to-user"],
+  pimsettings:["Configure Entra role settings in PIM","https://learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management/pim-how-to-change-default-settings"],
+  pimapprove:["Approve or deny PIM requests","https://learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management/pim-approval-workflow"],
+  reviews:   ["What are access reviews?","https://learn.microsoft.com/en-us/entra/id-governance/access-reviews-overview"],
+  reviewcreate:["Create an access review of groups and apps","https://learn.microsoft.com/en-us/entra/id-governance/create-access-review"],
+  elm:       ["What is entitlement management?","https://learn.microsoft.com/en-us/entra/id-governance/entitlement-management-overview"],
+  elmcreate: ["Create an access package","https://learn.microsoft.com/en-us/entra/id-governance/entitlement-management-access-package-create"],
+  lcw:       ["What are lifecycle workflows?","https://learn.microsoft.com/en-us/entra/id-governance/what-are-lifecycle-workflows"],
+  skills:    ["SC-300 study guide","https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/sc-300"]
+};
+const lk = k => LEARN[k] ? `<a href="${LEARN[k][1]}" target="_blank" rel="noopener">${LEARN[k][0]}</a>` : "";
+
+/* Tenant domain. {D} → code-styled domain, {d} → plain domain (so @{d} → @domain). */
+const DEFAULT_DOM = "yourlab.onmicrosoft.com";
+const dm = str => String(str == null ? "" : str)
+  .replace(/\{D\}/g, `<code>${esc(S.dom)}</code>`)
+  .replace(/\{d\}/g, esc(S.dom));
+
+/* ================= CONTENT ================= */
+const DAYS = [
+/* ---------------- DAY 0 ---------------- */
+{ title:"Day 0: Prerequisites", desc:"Admin accounts, a license, a budget, and your first two refusals.",
+  injects:[
+  { id:"x01", type:"INC", cat:"Security", sub:"Cost anomaly", ci:"Azure subscription", pri:"P1", contact:"Monitoring",
+    btn:["Three days later: 100% budget alert","Your resource group should still be empty…"],
+    from:"Cost Management alerts", tag:"real",
+    subj:"Budget alert: 100% of budget-sc300-lab reached",
+    body:`<p>Actual cost has reached <b>100%</b> of <b>budget-sc300-lab</b>.</p>
+      <p>Cost analysis grouped by resource shows <code>vm-gpu-7731</code>, a large GPU VM in <b>Brazil South</b>, in a resource group you didn't create, <code>rg-temp-01</code>. The Activity Log says it was created by <code>sc300-lab-admin</code> at 03:12 local time.</p>
+      <p>You haven't built any VMs yet.</p>`,
+    trigger:[["Azure Activity Log","Microsoft.Compute/virtualMachines/write","sc300-lab-admin@{d}","vm-gpu-7731 (GPU size, Brazil South) in rg-temp-01",1]],
+    verify:"Cost Management → Cost analysis → group by <b>Resource</b>. Open the VM's <b>Activity log</b> and check <i>Event initiated by</i>. Then the sign-in logs for SC300-Lab-Admin around 03:12: IP, location, device.",
+    why:`An unexpected GPU VM in a region you never use is a classic sign of ${T("cryptomining","Attackers who get into a cloud account start expensive GPU VMs to mine cryptocurrency on your bill.")} on a compromised account.`,
+    learn:["budget","signins"],
+    choices:[
+      ["It's probably a pricing glitch. Wait for next month's invoice.",0,"Budgets lag, but a GPU VM in a region you've never used is evidence, not a glitch. Waiting costs money and gives the attacker time.","Close: no action"],
+      ["Stop (deallocate) the VM, revoke SC300-Lab-Admin's sessions and review its sign-ins before deleting anything.",1,"Right. Contain the cost, contain the identity, keep the evidence. Deleting can wait until you know what happened.","Contain and investigate"],
+      ["Delete the VM and the resource group right away, then carry on with the lab.",0,"That stops this VM's cost but destroys evidence, and the account that created it is still compromised.","Delete resources and close"]
+    ],
+    evidence:{ audit:[["Azure Activity Log","Microsoft.Compute/virtualMachines/deallocate/action","you","vm-gpu-7731"],["Core Directory","Update StsRefreshTokenValidFrom Timestamp","you","SC300-Lab-Admin (Revoke sessions)"]] },
+    consequence:{ audit:[["Azure Activity Log","Microsoft.Compute/virtualMachines/write","sc300-lab-admin@{d}","vm-gpu-7732 (another GPU VM, Brazil South)",1]],
+      toast:"Another GPU VM just appeared. The compromised admin account is still active." } }
+  ],
+  tickets:[
+  { id:"t01", type:"RITM", cat:"Access", sub:"Admin account", ci:"Entra ID",
+    from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
+    subj:"Set up an admin account for Jamie (identity engineer)",
+    body:`<p>Jamie Patel joins this week as our identity engineer. Please create a dedicated admin account, <code>sc300-lab-admin@{d}</code>, and give it <b>Privileged Role Administrator</b> so Jamie can manage role assignments.</p>
+      <p>Make it an <b>active</b> assignment for now. We'll tighten it with PIM later.</p>
+      <p>Keep this separate from Jamie's everyday account. ${T("Separate admin accounts","Admins use one account for email and browsing and a different one for admin work. If the everyday account gets phished, the attacker doesn't automatically get admin rights.")} are standard practice.</p>`,
+    tasks:[
+      "Entra admin center → Identity → Users → All users → New user → Create new user. User principal name <code>sc300-lab-admin@{d}</code>, display name SC300-Lab-Admin. Note the temporary password somewhere safe (not here).",
+      "Identity → Roles &amp; admins → Roles &amp; admins → Privileged Role Administrator → Add assignments → select SC300-Lab-Admin. If PIM asks for an assignment type, pick <b>Active</b>.",
+      "Sign in as SC300-Lab-Admin in a private browser window and change the temporary password."
+    ],
+    hint:`Privileged Role Administrator can assign <i>any</i> Entra role, including Global Administrator. That's why it lives on a dedicated admin account, and why Day 4 makes it ${T("just-in-time","The role isn't active by default. The user activates it for a few hours when needed, usually with MFA, a justification and sometimes approval.")}.`,
+    verify:"Identity → Roles &amp; admins → Privileged Role Administrator → <b>Assignments</b>. Then Monitoring &amp; health → Audit logs → filter Activity = <code>Add member to role</code> and open the event.",
+    learn:["leastpriv","pim","audit"],
+    evidence:{
+      audit:[["Core Directory","Add user","you","sc300-lab-admin@{d}"],["Core Directory","Add member to role","you","SC300-Lab-Admin → Privileged Role Administrator"]],
+      mail:{ from:"PIM notifications", tag:"real", subj:"PIM: SC300-Lab-Admin was assigned Privileged Role Administrator",
+        why:"From now on, every access change leaves a trail. Learn to find it before you need it in an incident.",
+        body:`<p><b>Role:</b> Privileged Role Administrator<br><b>Assignee:</b> SC300-Lab-Admin<br><b>Type:</b> Active, permanent<br><b>Assigned by:</b> you</p>
+        <p>Assignments made through ${T("PIM","Privileged Identity Management. It controls just-in-time, time-bound and approval-based access to privileged roles. It needs Entra ID P2 or Governance licensing.")} can email admins and the assignee. Who gets these emails is set per role, under <i>Role settings → Notification</i>. If nothing arrived, check those settings. The audit log entry is there either way.</p>
+        <p>Keep this email. On Day 4 you'll compare it with the email for an <i>eligible</i> assignment.</p>` } } },
+
+  { id:"t02", type:"RITM", cat:"Access", sub:"New user", ci:"Entra ID / licensing",
+    from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
+    subj:"New service desk analyst: Taylor Brooks",
+    body:`<p>Taylor Brooks starts on the service desk today. Please create <code>sc300-lab-helpdesk@{d}</code> and assign it a <b>Microsoft Entra ID P2</b> license, which we need for the identity protection and PIM labs.</p>
+      <p><b>No admin role yet.</b> Taylor gets a properly scoped role tomorrow.</p>`,
+    tasks:[
+      "Identity → Users → New user → Create new user: <code>sc300-lab-helpdesk@{d}</code>, display name SC300-Lab-Helpdesk.",
+      "Open the user → Edit properties → Settings → set <b>Usage location</b> (licenses can't be assigned without it).",
+      "<b>Microsoft 365 admin center</b> → Billing → Licenses → Microsoft Entra ID P2 → Assign licenses → SC300-Lab-Helpdesk. (Licenses can no longer be assigned in the Entra admin center UI. A free trial works.)",
+      "Open the user → <b>Assigned roles</b>. Confirm it's empty."
+    ],
+    hint:`A ${T("license","A license unlocks features for the user, for example PIM or risk-based Conditional Access. It never gives the user permission to change anything in the tenant.")} isn't a ${T("role","A role is a set of admin permissions, such as resetting passwords or managing apps. Roles are what let someone change the tenant.")}. Students mix these up all the time.`,
+    verify:"Users → SC300-Lab-Helpdesk → <b>Licenses</b> (shows Entra ID P2, read-only here) and <b>Assigned roles</b> (empty). Audit logs → filter Target = sc300-lab-helpdesk.",
+    learn:["licenses","audit"],
+    evidence:{
+      audit:[["Core Directory","Add user","you","sc300-lab-helpdesk@{d}"],["Core Directory","Update user","you","sc300-lab-helpdesk (UsageLocation set)"],["Core Directory","Change user license","you","sc300-lab-helpdesk → Microsoft Entra ID P2"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"SC300-Lab-Helpdesk created and licensed (P2)",
+        body:`<p>Three events: <b>Add user</b>, <b>Update user</b> (usage location) and <b>Change user license</b>.</p>
+        <p>Note what did <i>not</i> happen: no role was assigned. Real tenants don't email anyone about any of this. The audit log is the only record.</p>
+        <p>Remember it this way. License = what the tenant can do <i>for</i> this user. Role = what this user can do <i>to</i> the tenant.</p>` } } },
+
+  { id:"t03", type:"RITM", cat:"Access", sub:"Role request", ci:"Entra ID roles",
+    from:"Taylor Brooks, Service Desk", pri:"P2", legit:false,
+    subj:"Can I just get Global Admin?",
+    body:`<p>Hi! First day and I've already had three password-reset calls I couldn't do.</p>
+      <p>Could you make my account (<code>sc300-lab-helpdesk</code>) a <b>Global Administrator</b>? It's way easier than working out which role does what. I promise I'll only use it for resets.</p>
+      <p>Thanks!! Taylor</p>`,
+    tasks:[],
+    verify:"Learn: <i>Least privileged roles by task</i>. Password resets for non-admin users are covered by Helpdesk Administrator or Password Administrator.",
+    learn:["leastpriv"],
+    choices:[
+      ["Assign Global Administrator. Taylor's on the team and the calls are piling up.",0,"Global Administrator can do everything, including removing <i>your</i> access. Being on the team doesn't make that proportionate to resetting passwords."],
+      ["Assign Global Administrator for one week, then remove it.",0,"A time limit doesn't make it least privilege. A week of tenant-wide control on a brand-new account is a week of tenant-wide risk, and \"temporary\" admin rights are famously forgotten."],
+      ["Decline politely. Explain that Helpdesk Administrator, scoped to the users Taylor supports, covers password resets, and that it's being set up tomorrow.",1,"Right. Least privilege means the smallest role, at the smallest scope, for the shortest time that does the job. That's exactly the Day 1 scoped-role ticket."]
+    ],
+    consequence:{ audit:[["Core Directory","Add member to role","you","SC300-Lab-Helpdesk → Global Administrator (scope: Directory)",1]],
+      toast:"SC300-Lab-Helpdesk is now Global Administrator: tenant-wide control for a password-reset job." } },
+
+  { id:"t04", type:"RITM", cat:"Cloud", sub:"Resource group and budget", ci:"Azure subscription",
+    from:"Priya Natarajan, IT Manager", pri:"P3", legit:true,
+    subj:"Resource group and budget before anyone builds VMs",
+    body:`<p>The hybrid lab on Day 1 uses paid VMs. Before anyone builds one, please create a resource group and a monthly <b>budget</b> with email alerts, so a forgotten VM can't quietly run up a bill.</p>`,
+    tasks:[
+      "Azure portal → Resource groups → Create: name <code>rg-sc300-lab</code>, a region near you.",
+      "Cost Management + Billing → Cost Management → Budgets → Add (scope: your subscription). Name <code>budget-sc300-lab</code>, reset period Monthly, an amount you're comfortable with.",
+      "Add alert conditions on <b>Actual</b> cost at 50%, 80% and 100%, sent to an email address you read."
+    ],
+    hint:"Budgets <b>warn</b>. They never stop charges. Only deallocating or deleting resources stops VM compute billing.",
+    verify:"Resource group → <b>Activity log</b>: the create event shows who did it. Cost Management → Budgets → budget-sc300-lab → check the alert conditions and recipients.",
+    learn:["budget"],
+    evidence:{
+      audit:[["Azure Activity Log","Microsoft.Resources/subscriptions/resourceGroups/write","you","rg-sc300-lab"],["Azure Activity Log","Microsoft.Consumption/budgets/write","you","budget-sc300-lab (alerts 50/80/100%)"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Budget saved. No email yet (and that's normal).",
+        why:"Day 1 builds VMs. The budget alert is your safety net for the day you forget to deallocate one.",
+        body:`<p>Creating a budget doesn't send an email. Real alert emails from Cost Management arrive only when spend crosses a threshold. Cost data is refreshed periodically, so an alert can arrive hours after the spend happened.</p>
+        <p>These events are in the <b>Azure Activity Log</b>, not the Entra audit log. Azure resources and Entra directory objects keep separate logs. That catches people out during investigations.</p>` } } },
+
+  { id:"t05", type:"INC", cat:"Security", sub:"Phishing", ci:"Shared IT mailbox",
+    from:"Cloud Billing Team <billing@subscription-notice.example>", pri:"P1", legit:false,
+    subj:"URGENT: Subscription suspended in 24h, verify payment",
+    body:`<p><i>(Forwarded to the queue from the shared IT mailbox.)</i></p>
+      <p>Dear Customer,</p><p>We could not validate your payment method. Your subscription and all resources will be <b>suspended in 24 hours</b>.</p>
+      <p style="text-align:center"><span style="display:inline-block;border:1px solid var(--line);background:var(--panel2);padding:8px 18px;border-radius:4px">Verify Payment Now</span><br><small style="color:var(--muted)">(button points to https://billing-portal-verify.example/login)</small></p>
+      <p>Billing Department</p>`,
+    tasks:[],
+    verify:"Never use a link in the message. Open the Azure portal yourself → Cost Management + Billing. A real payment problem shows there.",
+    learn:["budget"],
+    choices:[
+      ["Click <i>Verify Payment Now</i> and sign in. Losing the subscription would wreck the lab.",0,"That's what the 24-hour deadline is for: to rush you past checking. The sign-in page belongs to the attacker, and it now has your admin credentials."],
+      ["Click the link, but in a private browser window so it's safe.",0,"A private window doesn't make a phishing page safe. It just doesn't save history. You'd still be typing your admin password into the attacker's page."],
+      ["Don't use the link or reply. Open the portal yourself, check billing there, and report the email as phishing.",1,"Right. Red flags: a sender domain that isn't your provider's, a button that goes to a look-alike domain, a 24-hour threat, and a generic greeting. Make it a habit to go to the portal yourself, never through the message."]
+    ],
+    consequence:{ audit:[["Sign-in logs","Sign-in (interactive)","you","Azure portal from unfamiliar IP 203.0.113.50, 4 minutes after your password was entered on the look-alike page",1]],
+      toast:"New sign-in to your admin account from an unfamiliar location." } }
+  ]},
+
+/* ---------------- DAY 1 ---------------- */
+{ title:"Day 1: Roles, users and guests", desc:"Scoped admin roles. A joiner, a mover and an incident. A guest. Optional hybrid sync.",
+  injects:[
+  { id:"x11", type:"INC", cat:"Security", sub:"Privilege escalation", ci:"Entra ID roles", pri:"P1", contact:"Monitoring",
+    btn:["PIM email at 02:14","A role change you didn't make"],
+    from:"PIM notifications", tag:"real",
+    subj:"PIM: SC300-Lab-Helpdesk was assigned Global Administrator",
+    body:`<p><b>Role:</b> Global Administrator<br><b>Scope:</b> Directory<br><b>Assignee:</b> SC300-Lab-Helpdesk<br><b>Type:</b> Active, permanent<br><b>Assigned by:</b> sc300-lab-admin<br><b>Time:</b> 02:14</p>
+      <p>Taylor's account was only ever meant to have Helpdesk Administrator, scoped to AU-Lab. Global Admin for it was refused on Day 0.</p>`,
+    trigger:[["Core Directory","Add member to role","sc300-lab-admin@{d}","SC300-Lab-Helpdesk → Global Administrator (scope: Directory)",1]],
+    verify:"Roles &amp; admins → Global Administrator → Assignments. Audit logs → filter Initiated by = sc300-lab-admin, last 24 hours. Sign-in logs for sc300-lab-admin around 02:14: what IP, location and device?",
+    why:"This is why role-assignment notifications exist. Privilege escalation through a compromised admin account usually happens at night, when nobody is watching the portal.",
+    learn:["pim","audit","revoke"],
+    choices:[
+      ["SC300-Lab-Admin is allowed to assign roles, so this is fine.",0,"Being <i>able</i> to do something isn't the same as being <i>authorized</i> to do it. Off-hours, tenant-wide, permanent and against the lab design: four red flags.","Close: authorized change"],
+      ["Remove the Global Administrator assignment, revoke sessions for BOTH accounts, review SC300-Lab-Admin's sign-ins and audit trail, and reset its credentials if the sign-in wasn't Jamie.",1,"Right. Contain both identities, not just the target. The account that made the change is the attacker's foothold.","Contain both accounts and investigate"],
+      ["Delete the SC300-Lab-Helpdesk user.",0,"That removes the target but leaves the attacker's foothold (SC300-Lab-Admin) in place, and it destroys evidence.","Delete the target user and close"]
+    ],
+    evidence:{ audit:[["Core Directory","Remove member from role","you","SC300-Lab-Helpdesk → Global Administrator"],["Core Directory","Update StsRefreshTokenValidFrom Timestamp","you","SC300-Lab-Admin, SC300-Lab-Helpdesk (Revoke sessions)"]] },
+    consequence:{ audit:[["Core Directory","Add member to role","sc300-lab-admin@{d}","svc-sync02@{d} → Global Administrator",1]],
+      toast:"SC300-Lab-Admin just made another account Global Administrator." } }
+  ],
+  tickets:[
+  { id:"t11", type:"RITM", cat:"Access", sub:"Role request", ci:"Entra ID roles",
+    from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
+    subj:"Give Taylor password-reset rights, for lab users only",
+    body:`<p>Taylor should be able to reset passwords for our lab users, but <b>not</b> for admins or anyone else.</p>
+      <p>Please create an ${T("administrative unit","A container for users, groups or devices. A role assigned 'scoped to' an administrative unit only works on what's inside it.")} called <b>AU-Lab</b> and give SC300-Lab-Helpdesk the <b>Helpdesk Administrator</b> role, scoped to it.</p>`,
+    tasks:[
+      "Identity → Roles &amp; admins → Admin units → Add: name <code>AU-Lab</code>. Leave it empty for now. lab.user1 joins in the next ticket.",
+      "AU-Lab → Roles and administrators → Helpdesk Administrator → Add assignments → SC300-Lab-Helpdesk.",
+      "Users → SC300-Lab-Helpdesk → Assigned roles: confirm the <b>scope</b> column says AU-Lab, not Directory."
+    ],
+    hint:`${T("Role","What the admin can do, for example reset passwords.")} + ${T("scope","Where they can do it: the whole directory, or just an administrative unit.")} = the real permission. Most of the threats in this course come down to a role with the wrong scope.`,
+    verify:"Admin units → AU-Lab → Roles and administrators. Audit logs → filter Activity = <code>Add scoped member to role</code>.",
+    learn:["au","audit"],
+    evidence:{
+      audit:[["Core Directory","Add administrative unit","you","AU-Lab"],["Core Directory","Add scoped member to role","you","SC300-Lab-Helpdesk → Helpdesk Administrator (scope: AU-Lab)"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Helpdesk Administrator for Taylor, scoped to AU-Lab",
+        why:"Most of the threats in this course come down to a role with the wrong scope. Check the scope column every time.",
+        body:`<p>SC300-Lab-Helpdesk can now reset passwords <b>only for users inside AU-Lab</b>. Right now that's nobody.</p>
+        <p>In the next ticket you'll add lab.user1 to AU-Lab and test it both ways. A reset that <i>fails</i> on an admin account is the boundary doing its job.</p>` } } },
+
+  { id:"t12", type:"RITM", cat:"Access", sub:"Joiner", ci:"Entra ID",
+    from:"HR People Team", pri:"P2", legit:true,
+    subj:"New starter: lab.user1 joins Sales on Monday",
+    body:`<p>Please set up an account for our new Sales associate.</p>
+      <p><b>UPN:</b> <code>lab.user1@{d}</code><br><b>Department:</b> Sales<br><b>Job title:</b> Sales Associate<br><b>Access:</b> the Sales team groups, GRP-Sales and GRP-Sales-Shared</p>
+      <p>The service desk will support this user, so please make sure Taylor can reset their password.</p>`,
+    tasks:[
+      "Identity → Users → New user: <code>lab.user1@{d}</code>. In Properties, set Department = Sales and Job title = Sales Associate.",
+      "Identity → Groups → New group, twice: <b>Security</b> groups <code>GRP-Sales</code> and <code>GRP-Sales-Shared</code>, membership type Assigned. Add lab.user1 as a <b>member</b> of both.",
+      "Admin units → AU-Lab → Users → Add member → lab.user1.",
+      "Private window: sign in as SC300-Lab-Helpdesk. Reset lab.user1's password (should work), then try SC300-Lab-Admin's (should fail)."
+    ],
+    hint:`This is the ${T("joiner","Joiner–mover–leaver (JML): the three moments in an employee's lifecycle where access must be granted, changed or removed. lab.user1 goes through all three in this course.")} step. Keep a note of everything you grant. Tomorrow, someone has to take it away again.`,
+    verify:"Users → lab.user1 → <b>Groups</b> (two groups) and <b>Administrative units</b> (AU-Lab). Audit logs → filter Initiated by = sc300-lab-helpdesk to see Taylor's reset.",
+    learn:["au","audit"],
+    evidence:{
+      audit:[["Core Directory","Add user","you","lab.user1@{d}"],["Core Directory","Add group","you","GRP-Sales, GRP-Sales-Shared"],["Core Directory","Add member to group","you","lab.user1 → GRP-Sales, GRP-Sales-Shared"],["Core Directory","Add member to administrative unit","you","lab.user1 → AU-Lab"],["Self-service Password Management","Reset password (by admin)","sc300-lab-helpdesk@{d}","lab.user1"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Joiner done: lab.user1 in Sales, inside AU-Lab",
+        body:`<p>Look at the last audit row: Taylor's password reset, <b>initiated by sc300-lab-helpdesk</b>. Scoped admins leave the same trail as anyone else.</p>
+        <p>The failed reset on SC300-Lab-Admin doesn't create an audit event, because nothing changed. A refused action is proven by testing it, not by the audit log.</p>` } } },
+
+  { id:"t13", type:"RITM", cat:"Access", sub:"Guest access", ci:"Entra ID (B2B)",
+    from:"Priya Natarajan, IT Manager", pri:"P3", legit:true,
+    subj:"External auditor needs Support access for two weeks",
+    body:`<p>Jordan Reyes from Larkspur Audit (<code>jordan.reyes@larkspur-audit.example</code>) starts a two-week audit with the Support team. Please invite Jordan as a ${T("guest","A B2B guest is a user from outside your organization who signs in with their own account. They appear in your directory with User type = Guest.")} and add them to a new group, <b>GRP-Support</b>. I'm Jordan's sponsor.</p>
+      <p><b>Lab note:</b> you can't receive mail at a <code>.example</code> address. Invite a personal mailbox you control instead and pretend it's Jordan.</p>`,
+    tasks:[
+      "Identity → Users → New user → <b>Invite external user</b>: your own personal email address, display name <i>Jordan Reyes (Larkspur Audit)</i>. Tick <i>Send invite message</i>.",
+      "Identity → Groups → New group: Security group <code>GRP-Support</code>, membership type Assigned. Add the guest as a member.",
+      "Open the invitation in that mailbox from a <b>private window</b> and accept it.",
+      "Users → the guest → Properties: <b>User type</b> = Guest, invitation state = Accepted. Assigned roles = none."
+    ],
+    hint:"Write down when this guest's access should end (two weeks). Nothing in Entra removes it automatically yet. Day 4 fixes that.",
+    verify:"Audit logs → filter Activity = <code>Invite external user</code>, then <code>Redeem external user invite</code>. Compare the two <b>Initiated by</b> values.",
+    learn:["b2binvite","b2b"],
+    evidence:{
+      audit:[["Invited Users","Invite external user","you","jordan (guest stand-in)"],["Core Directory","Add group","you","GRP-Support"],["Core Directory","Add member to group","you","Jordan Reyes (Larkspur Audit) → GRP-Support"],["Invited Users","Redeem external user invite","Jordan Reyes (guest)","Guest account"]],
+      mail:{ from:"Invitation on behalf of your lab organization", tag:"real", subj:"You're invited to the lab organization",
+        body:`<p>This copy lands in the <b>guest's</b> mailbox. Real tenants send an invitation like this when you tick <i>Send invite message</i>.</p>
+        <p>When the guest redeems it, the <b>Redeem external user invite</b> event appears with the guest as the initiator, not you.</p>
+        <p>Guests sometimes end up with privileged access through group memberships nobody remembered. Keep an eye on what GRP-Support is given later.</p>` } } },
+
+  { id:"t14", type:"RITM", cat:"Access", sub:"Guest access", ci:"Entra ID (B2B)",
+    from:"Jordan Reyes <jordan.reyes.audit@quickmail.example>", pri:"P1", legit:false,
+    subj:"Re: invite. Please resend to this address, urgent",
+    body:`<p>Hi,</p><p>My Larkspur mailbox is in the middle of a migration and the invite link won't open. Could you resend it to this personal address instead?</p>
+      <p>The audit kick-off with your finance director is in an hour and I really can't be locked out.</p><p>Thanks so much,<br>Jordan</p>`,
+    tasks:[],
+    verify:"Compare the sender with the address in Priya's ticket. Users → the guest → Properties → check the invited email. Learn: <i>Reset a guest's redemption status</i>.",
+    learn:["b2breset","b2b"],
+    choices:[
+      ["Send a new invitation to this address. The name matches and the audit is real.",0,"The name is the only thing that matches, and names cost nothing to fake. Anyone who heard about the audit could send this."],
+      ["Use <i>Reset redemption status</i> on Jordan's guest account and point it at the new address.",0,"Right tool, wrong moment. Resetting redemption to an unverified address hands the guest account, and its GRP-Support access, to whoever controls that mailbox."],
+      ["Change nothing yet. Contact Jordan and the sponsor (Priya) using details you already have, not the ones in this email. Only if both confirm, reset redemption status.",1,"Right. Changing an invite address is effectively changing who owns the account. Verify through a channel the requester didn't give you."]
+    ],
+    consequence:{ audit:[["Invited Users","Invite external user","you","jordan.reyes.audit@quickmail.example",1],["Invited Users","Redeem external user invite","jordan.reyes.audit@quickmail.example","Guest account (member of GRP-Support)",1]],
+      toast:"An unknown mailbox redeemed a guest invite and is now in GRP-Support." } },
+
+  { id:"t15", type:"RITM", cat:"Access", sub:"Mover", ci:"Entra ID",
+    from:"Dana Okafor, Support Lead", pri:"P2", legit:true,
+    subj:"lab.user1 is moving to my Support team",
+    body:`<p>Good news: lab.user1 transfers from Sales to Support starting today. HR has approved it (ref HR-2291).</p>
+      <p>Please update their department and give them what the Support team has (GRP-Support). Thanks!</p>`,
+    tasks:[
+      "Users → lab.user1 → Edit properties: Department = Support, Job title = Support Analyst.",
+      "Groups → GRP-Support → Members → Add → lab.user1.",
+      "Users → lab.user1 → Groups → <b>remove</b> GRP-Sales and GRP-Sales-Shared.",
+      "Check lab.user1 → Groups again: only GRP-Support should be listed."
+    ],
+    hint:`The ticket only says what to <i>add</i>. Movers keep their old access unless someone removes it. That's how long-serving staff end up with access to everything (${T("access creep","Permissions pile up as people change jobs, because new access is added and old access is never removed.")}).`,
+    pushback:"Dana is the new manager and quotes an HR reference. This is a legitimate request through a normal channel. The real risk in mover tickets isn't the request, it's forgetting to take the old access away.",
+    verify:"Audit logs → filter Target = lab.user1, last hour. You should see one <code>Add member to group</code> and two <code>Remove member from group</code> events.",
+    learn:["audit"],
+    evidence:{
+      audit:[["Core Directory","Update user","you","lab.user1 (Department: Sales → Support)"],["Core Directory","Add member to group","you","lab.user1 → GRP-Support"],["Core Directory","Remove member from group","you","lab.user1 → GRP-Sales"],["Core Directory","Remove member from group","you","lab.user1 → GRP-Sales-Shared"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Mover done: one add, two removes",
+        body:`<p>The removals are the part that matters. If you had only added GRP-Support, lab.user1 would now hold Sales <i>and</i> Support access, and nobody would notice until an access review.</p>
+        <p>Good habit: for every mover, list current memberships <b>before</b> you change anything.</p>` } } },
+
+  { id:"t16", type:"INC", cat:"Security", sub:"Compromised account", ci:"Entra ID",
+    from:"Security Operations (SOC)", pri:"P1", legit:true,
+    subj:"Suspicious sign-in for lab.user1: contain now",
+    body:`<p>We saw a successful sign-in for <b>lab.user1</b> at 03:40 from a country they've never signed in from. The user confirms it wasn't them.</p>
+      <p>Please contain the account: <b>disable it, revoke sessions, reset the password</b>, and review the sign-in logs. Once Dana confirms the user's identity, re-enable it.</p>`,
+    tasks:[
+      "Users → lab.user1 → Edit properties → Settings → untick <b>Account enabled</b> → Save.",
+      "Users → lab.user1 → Overview → <b>Revoke sessions</b> → Yes.",
+      "Users → lab.user1 → <b>Reset password</b>. Hand over the temporary password out of band (in the lab, just note it).",
+      "Monitoring &amp; health → Sign-in logs → filter User = lab.user1 → review IP address, location and application for the last 24 hours.",
+      "After the (pretend) identity check with Dana: tick <b>Account enabled</b> again → Save."
+    ],
+    hint:`You need both steps. Disabling blocks new sign-ins. Revoking invalidates refresh tokens, so existing sessions can't silently renew. Access tokens that were already issued can still work until they expire (typically around an hour), unless the app supports ${T("Continuous Access Evaluation","CAE lets supporting services, such as Exchange Online and SharePoint, reject a token almost immediately after a critical event like a disabled account or a revoked session.")}.`,
+    verify:"Audit logs → filter Target = lab.user1: the <code>Update user</code> events show <b>AccountEnabled</b> changing under Modified properties.",
+    learn:["revoke","signins"],
+    evidence:{
+      audit:[["Core Directory","Update user","you","lab.user1 (AccountEnabled: true → false)"],["Core Directory","Update StsRefreshTokenValidFrom Timestamp","you","lab.user1 (Revoke sessions)"],["Self-service Password Management","Reset password (by admin)","you","lab.user1"],["Core Directory","Update user","you","lab.user1 (AccountEnabled: false → true)"]],
+      mail:{ from:"Lab Inbox (evidence card)", tag:"sim", subj:"Containment evidence for lab.user1",
+        body:`<p>Your incident timeline, from the audit log: disabled → sessions revoked → password reset → re-enabled. Each event shows <b>you</b> as the initiator and a timestamp.</p>
+        <p>In a real incident you'd also check what the attacker did while signed in, for example mail rules, app consents and MFA methods registered. Keep this lab account's history in mind: you'll offboard lab.user1 on Day 3.</p>` } } },
+
+  { id:"t17", type:"RITM", cat:"Hybrid identity", sub:"Directory sync", ci:"Entra Cloud Sync",
+    from:"Priya Natarajan, IT Manager", pri:"P3", legit:true, optional:true,
+    subj:"(Optional, paid) Hybrid lab: sync an on-prem user with Cloud Sync",
+    body:`<p>If you have Azure credit to spare, build a small hybrid lab: one domain controller VM running AD DS, synced to Entra with <b>Entra Cloud Sync</b>.</p>
+      <p><b>This costs money.</b> Keep the VM small, and deallocate it as soon as you're done. Your budget alerts from Day 0 are the safety net, not the plan.</p>`,
+    tasks:[
+      "Azure portal → create a small Windows Server VM in <code>rg-sc300-lab</code>, promote it to a domain controller for <code>lab.local</code>, and create an AD user <code>alice.onprem</code> in its own OU.",
+      "Entra admin center → Identity → Hybrid management → Microsoft Entra Connect → Cloud sync → download the provisioning agent and install it on the DC.",
+      "Create a configuration for lab.local, scope it to the OU that holds alice.onprem, set a notification email, and enable it.",
+      "Check the Provisioning logs, then find alice.onprem under Users (<b>On-premises sync enabled</b> = Yes).",
+      "Azure portal → the VM → <b>Stop</b>. Confirm the status shows <b>Stopped (deallocated)</b>."
+    ],
+    hint:"A VM that's only shut down from inside Windows still bills for compute. Stop it from the portal so it shows <i>Stopped (deallocated)</i>.",
+    verify:"Cloud sync → Configurations → lab.local → Status and Provisioning logs. VM → Overview → Status = Stopped (deallocated).",
+    learn:["sync","budget"],
+    evidence:{
+      audit:[["Core Directory","Add user","Microsoft.Azure.SyncFabric","alice.onprem@{d} (synced from lab.local)"],["Azure Activity Log","Deallocate Virtual Machine","you","DC VM in rg-sc300-lab"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"alice.onprem synced. VM deallocated.",
+        body:`<p>The synced user was created by the sync service, not by you, so check the <b>Initiated by</b> column.</p>
+        <p>If sync fails repeatedly, a real Cloud Sync configuration goes into ${T("quarantine","Sync pauses itself after repeated failures, such as bad credentials or a scoping mistake. It retries less often until you fix the cause and restart it.")} and emails the notification address you set. That one is a real-world email.</p>
+        <p>A synced account and its on-prem AD account are related but separate. Disabling one doesn't automatically disable the other until the next sync.</p>` } } }
+  ]},
+
+/* ---------------- DAY 2 ---------------- */
+{ title:"Day 2: MFA and Conditional Access", desc:"Prove MFA happened. Pilot Conditional Access without locking anyone out.",
+  injects:[
+  { id:"x21", type:"INC", cat:"Security", sub:"MFA fatigue", ci:"Authentication methods", pri:"P1", contact:"Phone", push:true,
+    btn:["Push: 'Are you trying to sign in?'","MFA fatigue drill for lab.user1"],
+    from:"Lab Inbox (evidence card)", tag:"sim",
+    subj:"Three MFA prompts in 90 seconds for lab.user1",
+    body:`<p>Sign-in logs show three attempts for lab.user1 with the <b>correct password</b>, each waiting on MFA, from an IP address and country you've never seen. Each one sent a prompt to the user's phone.</p>
+      <p>The attacker already has the password. MFA is the only thing stopping them, and they're hoping someone approves to make the prompts stop.</p>
+      <p>A minute later lab.user1 calls the service desk: <i>"I keep getting prompts. Should I just approve one to make them stop?"</i></p>`,
+    trigger:[["Sign-in logs","Sign-in (interactive)","lab.user1@{d}","203.0.113.77 (unfamiliar country) · password correct · MFA interrupted",1]],
+    verify:"Sign-in logs → lab.user1 → filter Status = Interrupted or Failure. Check IP, location and Authentication details.",
+    why:`${T("Number matching","The sign-in screen shows a number and the user must type it into Authenticator. A user who didn't start the sign-in has no number to type.")} makes blind approvals much harder, but an attacker can still phone the user and read their number out. Users need to know: a prompt you didn't start means your password is known.`,
+    learn:["numbermatch","signins","revoke"],
+    choices:[
+      ["Tell the user to approve one prompt so they stop.",0,"That's exactly what the attacker wants. Approving hands them a fully authenticated session.","Advise the user to approve"],
+      ["Tell the user to deny every prompt, then reset the password (it's compromised), revoke sessions and review the sign-ins.",1,"Right. Repeated prompts with a correct password mean the password is known. Reset it, revoke sessions, and check whether any attempt succeeded.","Reset password, revoke sessions, investigate"],
+      ["Turn off MFA for the user until the prompts stop.",0,"That gives the attacker exactly what the prompts were blocking.","Remove MFA for the user"]
+    ],
+    evidence:{ audit:[["Self-service Password Management","Reset password (by admin)","you","lab.user1"],["Core Directory","Update StsRefreshTokenValidFrom Timestamp","you","lab.user1 (Revoke sessions)"]] },
+    consequence:{ audit:[["Sign-in logs","Sign-in (interactive)","lab.user1@{d}","203.0.113.77 · MFA satisfied · Success",1]],
+      toast:"The attacker signed in as lab.user1 with MFA satisfied." } },
+  { id:"x22", type:"INC", cat:"Security", sub:"Unauthorized change", ci:"Conditional Access", pri:"P1", contact:"Email",
+    btn:["Audit: CA policy switched to On","Someone changed your report-only policy"],
+    from:"Taylor Brooks, Service Desk",
+    subj:"Can't sign in. Everyone's getting blocked??",
+    body:`<p>Hey, nobody can get into anything, and that includes the break-glass test account. It started about 10 minutes ago. Did something change?</p>
+      <p>Should I just add everyone to the exclusions on that new MFA policy so people can work?</p><p>Taylor</p>`,
+    trigger:[["Conditional Access","Update conditional access policy","sc300-lab-admin@{d}","CA-Pilot-RequireMFA (state: report-only → on; users: GRP-Support → All users; exclusions removed)",1]],
+    verify:"Audit logs → Activity = <code>Update conditional access policy</code> → open it → <b>Modified properties</b> shows the old and new values. Check who initiated it, and their sign-ins.",
+    why:"The audit log's Modified properties tells you exactly what to undo. Break-glass accounts are excluded from Conditional Access so a bad policy can't lock everyone out.",
+    learn:["ro","breakglass","audit"],
+    choices:[
+      ["Add All users to the policy's exclusions, like Taylor suggested.",0,"That ends the lockout by making the policy do nothing, and nobody looks at the real problem: an admin account changed a policy without approval.","Exclude everyone and close"],
+      ["Set the policy back to Report-only with its original users, restore the break-glass exclusion, then investigate who changed it and why.",1,"Right. Revert using Modified properties, restore the emergency access exclusion, then treat the unapproved change as a possible compromise of SC300-Lab-Admin.","Revert and investigate"],
+      ["Delete the policy entirely.",0,"It ends the lockout, but you lose the pilot and nobody investigates who changed it.","Delete the policy and close"]
+    ],
+    evidence:{ audit:[["Conditional Access","Update conditional access policy","you","CA-Pilot-RequireMFA (state: on → report-only; users: GRP-Support; exclude breakglass01)"]] },
+    consequence:{ audit:[["Conditional Access","Update conditional access policy","sc300-lab-admin@{d}","CA-Pilot-RequireMFA changed again by the same account",1]],
+      toast:"The same admin account changed Conditional Access again. Nobody investigated it." } }
+  ],
+  tickets:[
+  { id:"t21", type:"RITM", cat:"Security", sub:"MFA configuration", ci:"Authentication methods",
+    from:"Priya Natarajan, IT Manager", pri:"P3", legit:true,
+    subj:"Check Authenticator is set up properly for lab users",
+    body:`<p>Before the MFA audit, please confirm that <b>Microsoft Authenticator</b> is enabled for our users and that push notifications show sign-in context (app name and location).</p>
+      <p>Look, don't change. If something's wrong, tell me before fixing it.</p>`,
+    tasks:[
+      "Protection → Authentication methods → Policies → Microsoft Authenticator → Enable and Target: check it's enabled and the target includes lab.user1 (All users, or a group they're in).",
+      "Configure tab: note the values for <b>Show application name</b> and <b>Show geographic location</b> in push notifications.",
+      `Confirm there's no option to turn off number matching. ${T("Number matching","The sign-in screen shows a number and the user must type it into Authenticator. A user can't approve a prompt they didn't start just by tapping Approve.")} is always on for Authenticator push now.`
+    ],
+    hint:"Reading a policy writes nothing to the audit log. If you clicked Save, there'll be an event, and that's worth knowing too.",
+    verify:"Audit logs → Service = Authentication Methods. If you saved nothing, there's nothing to find, which is the right result for a look-only check.",
+    learn:["authmethods","numbermatch"],
+    evidence:{
+      audit:[],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Policy check: no audit events (as expected)",
+        body:`<p>You only looked, so the audit log stays empty. That's an important limit: the audit log records <b>changes</b>, not reads. "Who looked at this setting?" usually can't be answered from it.</p>
+        <p>If you <i>had</i> saved the policy, you'd see an event from the Authentication Methods service, and its Modified properties would show the old and new values.</p>` } } },
+
+  { id:"t22", type:"RITM", cat:"Audit", sub:"Evidence request", ci:"Sign-in logs",
+    from:"Riley Chen, Internal Audit", pri:"P2", legit:true,
+    subj:"Evidence request: show MFA on a fresh sign-in",
+    body:`<p>For our access-control audit I need evidence that <b>lab.user1 completed MFA on a sign-in today</b>, not just that MFA is "turned on".</p>
+      <p>Please send me the sign-in event details: time, app, and how MFA was satisfied.</p>`,
+    tasks:[
+      "Private window: sign in as lab.user1 to <b>My Sign-Ins → Security info</b> (from the My Account portal). If prompted, register Microsoft Authenticator.",
+      "Close the window, open a <b>new</b> private window and sign in as lab.user1 again, approving the Authenticator prompt.",
+      "Sign-in logs → filter User = lab.user1 → open the newest event → <b>Authentication details</b> tab.",
+      "Note the event's <b>Request ID</b> and <b>Correlation ID</b> for Riley."
+    ],
+    hint:`Look for "MFA completed in Azure AD" (or similar) against a method like <i>Mobile app notification</i>. If it says ${T("Previously satisfied","The session already held an MFA claim, so the user wasn't prompted this time. It's evidence of an earlier MFA, not of this sign-in.")}, try again from a fresh private window.`,
+    verify:"Sign-in logs → the event → Authentication details. Audit logs → Service = Authentication Methods → <code>User registered security info</code> (if you registered just now).",
+    learn:["signins","authmethods"],
+    evidence:{
+      audit:[["Authentication Methods","User registered security info","lab.user1@{d}","Microsoft Authenticator"],["Sign-in logs","Sign-in (interactive)","lab.user1@{d}","My Sign-Ins · MFA completed (mobile app notification)"]],
+      mail:{ from:"Lab Inbox (evidence card)", tag:"sim", subj:"Evidence card: did MFA really happen?",
+        body:`<p>"MFA is enabled" is a setting. "MFA happened at 10:42 for this user on this app" is evidence. Auditors want the second.</p>
+        <ul><li><b>MFA completed</b>: a prompt happened in <i>this</i> event.</li>
+        <li><b>Previously satisfied</b>: no new prompt. It relies on an earlier one.</li></ul>
+        <p>The Request ID lets anyone with log access find the exact same event.</p>` } } },
+
+  { id:"t23", type:"INC", cat:"Access", sub:"MFA reset", ci:"Authentication methods",
+    from:"Service desk phone log", pri:"P1", legit:false,
+    subj:"Caller: \"Lost my phone at the airport, please remove my MFA\"",
+    body:`<p><b>Call notes, 18:52.</b> Caller says they're lab.user1. Their phone was stolen at the airport, their flight boards in 40 minutes, and they need email for the boarding pass.</p>
+      <p>Asks us to "just turn off MFA" on the account. Caller ID: withheld. Caller knew the employee's department and manager's name.</p>`,
+    tasks:[],
+    verify:"Learn: <i>Temporary Access Pass</i>. It must be enabled in the authentication methods policy before you can issue one.",
+    learn:["tap","authmethods"],
+    choices:[
+      ["Delete all of lab.user1's authentication methods so they can register again from their laptop.",0,"Then whoever is on the phone registers <i>their</i> phone as lab.user1's MFA. You'd be helping an attacker enroll."],
+      ["Exclude lab.user1 from MFA for 24 hours so they can get their boarding pass.",0,"An MFA exclusion for a caller you haven't verified is exactly what a social engineer is after. Knowing the department and manager isn't proof. That's on LinkedIn."],
+      ["Verify first: call back on the number in the HR record, or confirm with their manager. Once verified, issue a short-lived, one-time Temporary Access Pass and remove the lost phone's Authenticator registration.",1,"Right. Urgency plus a withheld number is the classic pretext. A verified identity and a one-time Temporary Access Pass get a real user back in without weakening MFA."]
+    ],
+    consequence:{ audit:[["Authentication Methods","Admin deleted security info","you","lab.user1 (Microsoft Authenticator)",1],["Authentication Methods","User registered security info","lab.user1@{d}","Microsoft Authenticator on a new device, IP 198.51.100.23",1]],
+      toast:"A new Authenticator was registered for lab.user1 from an unfamiliar IP." } },
+
+  { id:"t24", type:"CHG", cat:"Security", sub:"Conditional Access", ci:"Conditional Access",
+    from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
+    subj:"Pilot an MFA policy in report-only mode",
+    body:`<p>We want Conditional Access to require MFA for Support, but I don't want to lock anyone out. Please build it in <b>report-only</b> mode, targeting GRP-Support.</p>
+      <p>Make sure our ${T("emergency access account","Also called a break-glass account. A cloud-only account with Global Administrator, a long random password kept offline, and no day-to-day use. Excluded from Conditional Access so a bad policy can't lock everyone out.")} can never be caught by it.</p>`,
+    tasks:[
+      "If you don't have one yet: create <code>breakglass01@{d}</code>, assign it Global Administrator, give it a long random password stored offline, and don't use it day to day.",
+      "Protection → Conditional Access → Policies → New policy: name <code>CA-Pilot-RequireMFA</code>. Users: include GRP-Support. Exclude breakglass01.",
+      "Target resources: All resources. Grant: Require multifactor authentication.",
+      "Enable policy: <b>Report-only</b> → Create.",
+      "Sign in as lab.user1, then open that sign-in event → <b>Report-only</b> tab and find CA-Pilot-RequireMFA's result."
+    ],
+    hint:"Report-only works even while security defaults is still on. What you can't do is switch a policy <b>On</b>, and once any CA policy exists you can't turn security defaults back on. Moving from security defaults to Conditional Access is a design decision for the tenant owner, because your policies have to replace the protection you'd be switching off. Don't switch it off just to match a screenshot.",
+    verify:"Audit logs → Activity = <code>Add conditional access policy</code> → Modified properties shows the state <code>enabledForReportingButNotEnforced</code>. Also try the <b>What If</b> tool with lab.user1.",
+    learn:["ro","breakglass"],
+    evidence:{
+      audit:[["Core Directory","Add user","you","breakglass01@{d}"],["Core Directory","Add member to role","you","breakglass01 → Global Administrator"],["Conditional Access","Add conditional access policy","you","CA-Pilot-RequireMFA (state: enabledForReportingButNotEnforced)"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"CA-Pilot-RequireMFA created in report-only",
+        body:`<p>Report-only policies are evaluated on every matching sign-in, and the result is logged on the sign-in's <b>Report-only</b> tab. Nobody is blocked or prompted.</p>
+        <p>Run it like this for a while, check the results (<i>Report-only: Success / Failure / User action required</i>), and only then switch it on. Note that GRP-Support also contains your guest. Policies apply to guests too.</p>` } } },
+
+  { id:"t25", type:"CHG", cat:"Security", sub:"Security defaults", ci:"Entra ID tenant",
+    from:"Marcus Webb, Sales Manager", pri:"P2", legit:false,
+    subj:"Trade show next week: can we switch off the MFA thing?",
+    body:`<p>My team will be signing in on hotel and expo Wi-Fi all week, and the MFA prompts are killing us.</p>
+      <p>Can you turn off <b>security defaults</b> until we're back? Priya's out, so I'm asking you directly. It's only a week, and Sales is where the revenue comes from.</p>`,
+    tasks:[],
+    verify:"Learn: <i>Security defaults</i>. Read what it protects for <b>every</b> account in the tenant, not just Sales.",
+    learn:["secdefaults"],
+    choices:[
+      ["Turn off security defaults for the week. Sales is a revenue team.",0,"Security defaults protects every account in the tenant, admins included. A week of public Wi-Fi is exactly when you most want MFA."],
+      ["Turn it off, and set a calendar reminder to turn it back on.",0,"The reminder doesn't change the risk. For a week, nothing requires MFA anywhere in the tenant, including on admin accounts."],
+      ["Decline. Explain that security defaults protects the whole tenant and that the call belongs to Priya, the tenant owner, not one team. Offer to look at why the team gets repeated prompts.",1,"Right. Notice the pretext: authority (\"Priya's out\"), urgency and business value. Repeated prompts are usually a symptom, for example new devices or browsers clearing cookies, and you can fix those without removing MFA."]
+    ],
+    consequence:{ audit:[["Conditional Access","Update security defaults","you","Security defaults (enabled → disabled)",1]],
+      toast:"Security defaults is OFF. No account in the tenant is required to use MFA." } }
+  ]},
+
+/* ---------------- DAY 3 ---------------- */
+{ title:"Day 3: Apps, consent and the leaver", desc:"A token proves who you are. Consent decides what an app can do. lab.user1 leaves.",
+  tickets:[
+  { id:"t31", type:"RITM", cat:"Applications", sub:"Single sign-on", ci:"SAML Toolkit",
+    from:"Priya Natarajan, IT Manager", pri:"P3", legit:true,
+    subj:"SSO for the SAML test app, assigned users only",
+    body:`<p>Please add the <b>Microsoft Entra SAML Toolkit</b> from the app gallery and set up SAML ${T("SSO","Single sign-on. The user signs in once to Entra, and Entra vouches for them to the app, here with a signed SAML token.")}.</p>
+      <p>Only people we assign should get in. Assign Taylor (SC300-Lab-Helpdesk). lab.user1 should <b>not</b> get in.</p>`,
+    tasks:[
+      "Identity → Applications → Enterprise applications → New application → search <i>Microsoft Entra SAML Toolkit</i> → Create.",
+      "Single sign-on → SAML → fill in the Basic SAML Configuration as the toolkit's setup page describes. Under SAML Certificates, add a <b>notification email</b>.",
+      "Properties → <b>Assignment required?</b> = Yes → Save. Users and groups → Add user/group → SC300-Lab-Helpdesk.",
+      "Test in private windows: Taylor gets in. lab.user1 is refused with error <code>AADSTS50105</code>."
+    ],
+    hint:"<code>AADSTS50105</code> means the user isn't assigned to the app. The password was fine, so don't reset it. Read the error code before you change anything.",
+    verify:"Sign-in logs → lab.user1 → the SAML Toolkit failure → Basic info → <b>Failure reason</b>. Enterprise app → Users and groups shows only Taylor.",
+    learn:["assignapp","samlcert"],
+    evidence:{
+      audit:[["Core Directory","Add service principal","you","Microsoft Entra SAML Toolkit"],["Core Directory","Update service principal","you","SAML SSO configured, signing certificate created"],["Core Directory","Add app role assignment grant to user","you","SC300-Lab-Helpdesk → SAML Toolkit"],["Sign-in logs","Sign-in failure","lab.user1@{d}","SAML Toolkit. AADSTS50105: user not assigned to a role for the application"]],
+      mail:{ from:"Certificate expiry notifications (preview)", tag:"real", subj:"Preview: SAML signing certificate for SAML Toolkit is expiring soon",
+        body:`<p>Nothing is expiring yet. This is a <b>preview</b> of the real email that the notification address you set will get before the signing certificate expires.</p>
+        <p>Teams that skip the notification email find out when SSO stops working. Then everybody calls the service desk at once.</p>` } } },
+
+  { id:"t32", type:"RITM", cat:"Applications", sub:"App registration", ci:"SC300-Graph-Lab",
+    from:"Alex Moreno, Developer", pri:"P3", legit:true,
+    subj:"App registration for a small Graph test script",
+    body:`<p>I'm testing a small Python script, <code>graph-profile.py</code>. It signs in with device code and reads the signed-in user's profile.</p>
+      <p>Could you register a <b>single-tenant</b> app for it? It only needs <code>User.Read</code>.</p>`,
+    tasks:[
+      "Identity → Applications → App registrations → New registration: name <code>SC300-Graph-Lab</code>, <i>Accounts in this organizational directory only</i>, no redirect URI.",
+      "Authentication → <b>Allow public client flows</b> = Yes → Save (needed for device code).",
+      "API permissions → confirm the only permission is Microsoft Graph <code>User.Read</code> (Delegated).",
+      "Copy the Application (client) ID. Find the <b>same</b> ID under Enterprise applications."
+    ],
+    hint:`You create two objects: an ${T("app registration","The global definition of the app: its ID, redirect URIs and the permissions it asks for. It lives in its home tenant.")} and a ${T("service principal","The app's local identity in a tenant. Assignments, consent grants and sign-ins attach to it. It appears under Enterprise applications.")}.`,
+    verify:"Audit logs → filter Target = SC300-Graph-Lab. You'll see <code>Add application</code> and <code>Add service principal</code>.",
+    learn:["appobjects"],
+    evidence:{
+      audit:[["Core Directory","Add application","you","SC300-Graph-Lab"],["Core Directory","Add service principal","you","SC300-Graph-Lab"],["Core Directory","Update application","you","SC300-Graph-Lab (public client flows enabled)"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Two objects, one app: blueprint and instance",
+        body:`<p>The <b>application</b> is the blueprint. The <b>service principal</b> is the instance in your tenant.</p>
+        <p>When a multi-tenant app is used by another organization, only a service principal is created there. That's why consent and assignments are managed under Enterprise applications.</p>` } } },
+
+  { id:"t33", type:"RITM", cat:"Applications", sub:"Testing", ci:"SC300-Graph-Lab",
+    from:"Alex Moreno, Developer", pri:"P3", legit:true,
+    subj:"Please run the script as lab.user1 and tell me what you get",
+    body:`<p>Please run <code>graph-profile.py</code> with the client ID and tenant ID and sign in as <b>lab.user1</b> using the device code. It calls <code>GET /me</code> and then <code>GET /users</code>.</p>
+      <p>Tell me the HTTP status of each call.</p>`,
+    tasks:[
+      "Install Python, then the libraries the script needs (it uses MSAL). The course materials list them.",
+      "Run the script, open the device login page it prints, enter the code, and sign in as lab.user1.",
+      "Record the results: <code>/me</code> → 200 and <code>/users</code> → 403.",
+      "Sign-in logs → lab.user1 → Application = SC300-Graph-Lab → check the <b>Authentication protocol</b> shows device code."
+    ],
+    hint:`<code>graph-profile.py</code> comes with the course materials. Any ${T("device code","A sign-in flow for devices without a browser: the app shows a code, and the user enters it on a separate device. Attackers also abuse it in phishing, so many organizations restrict it with Conditional Access.")} sample that calls /me and /users works too.`,
+    verify:"Sign-in logs → lab.user1 → filter Application = SC300-Graph-Lab → Authentication details and Resource (Microsoft Graph).",
+    learn:["devicecode","graph"],
+    evidence:{
+      audit:[["Sign-in logs","Sign-in (interactive, device code)","lab.user1@{d}","SC300-Graph-Lab → Microsoft Graph, scope User.Read"]],
+      mail:{ from:"Lab Inbox (evidence card)", tag:"sim", subj:"403 on /users means your control is working",
+        body:`<p><code>GET /me → 200</code>: the delegated token can read the signed-in user's own profile.<br>
+        <code>GET /users → 403</code>: the same token can't list other users, because <code>User.Read</code> doesn't cover that.</p>
+        <p>The 403 is the result you wanted. Hold on to that thought for the next ticket.</p>` } } },
+
+  { id:"t34", type:"RITM", cat:"Applications", sub:"API permissions", ci:"SC300-Graph-Lab",
+    from:"Alex Moreno, Developer", pri:"P2", legit:false,
+    subj:"Script hits 403 on /users. Can you grant admin consent?",
+    body:`<p>Thanks for running it! The 403 on <code>/users</code> is blocking me.</p>
+      <p>Could you add <code>User.Read.All</code> to SC300-Graph-Lab and click <b>Grant admin consent</b>? It's only read access, nothing scary. I'd like to demo it this afternoon.</p>`,
+    tasks:[],
+    verify:"App registrations → SC300-Graph-Lab → API permissions. Learn: <i>Microsoft Graph permissions reference</i>, to compare User.Read, User.ReadBasic.All and User.Read.All.",
+    learn:["graph","consent"],
+    choices:[
+      ["Add <code>User.Read.All</code> and grant admin consent. It's read-only.",0,"\"Read-only\" across every user in the tenant is a lot: names, emails, phone numbers, managers, job titles. That's a reconnaissance gift, and admin consent applies it for everyone who uses the app."],
+      ["Add the smaller <code>User.ReadBasic.All</code> and grant consent without asking what it's for.",0,"Choosing a smaller permission is good instinct, but you still don't know why the script needs to list users. The original goal was the signed-in user's profile, and the 403 meant the test passed."],
+      ["Decline for now. The 403 is the control working. Ask Alex what business need requires listing users. If there is one, review the least-privileged permission through the normal consent process.",1,"Right. Permissions are added for a reason, not to make an error go away. A demo deadline is urgency, not a requirement."]
+    ],
+    consequence:{ audit:[["Core Directory","Consent to application","you","SC300-Graph-Lab",1],["Core Directory","Add delegated permission grant","you","SC300-Graph-Lab → Microsoft Graph: User.Read.All (all users)",1]],
+      toast:"SC300-Graph-Lab can now read every user's profile, for anyone who signs in to it." } },
+
+  { id:"t35", type:"RITM", cat:"Applications", sub:"Consent request", ci:"Invoice PDF Converter",
+    from:"Admin consent workflow", pri:"P2", legit:false,
+    subj:"SC300-Lab-Helpdesk requested access to 'Invoice PDF Converter'",
+    body:`<p><b>App:</b> Invoice PDF Converter (publisher: <span style="color:var(--phish)">unverified</span>)<br>
+      <b>Requested by:</b> SC300-Lab-Helpdesk<br>
+      <b>Justification:</b> "need to convert invoices, also fixes that 403 thing"<br>
+      <b>Permissions requested:</b> <code>Mail.ReadWrite</code>, <code>Files.ReadWrite.All</code>, <code>User.Read.All</code>, <code>offline_access</code></p>
+      <p><i>(A real tenant sends this email to the reviewers once you've turned on the admin consent workflow.)</i></p>`,
+    tasks:[],
+    verify:"Enterprise apps → Activity → <b>Admin consent requests</b> → open it → review publisher and permissions. Afterwards: Enterprise apps → Consent and permissions → User consent settings.",
+    learn:["consentwf","illicit"],
+    choices:[
+      ["Approve. Taylor needs it, and it fixes the 403 too.",0,"The 403 was the <i>intended</i> result. Approving lets an unverified app read and write mail and files indefinitely (offline_access keeps it working without the user)."],
+      ["Approve, but tell Taylor to only use it for invoices.",0,"Once it's granted, the app has the permissions, whatever Taylor intends. An app has no notion of \"only for invoices\"."],
+      ["Deny. Unverified publisher, permissions far beyond converting a PDF, and a justification that misreads a working control. Then check whether anyone has already consented to it.",1,"Right. This is the pattern behind illicit consent grants. Also check the audit log for <code>Consent to application</code> involving this app."]
+    ],
+    consequence:{ audit:[["Core Directory","Add service principal","you","Invoice PDF Converter (unverified publisher)",1],["Core Directory","Consent to application","you","Invoice PDF Converter",1],["Core Directory","Add delegated permission grant","you","Invoice PDF Converter → Mail.ReadWrite, Files.ReadWrite.All, User.Read.All, offline_access",1]],
+      toast:"Invoice PDF Converter now has mail and file access, with offline access." } },
+
+  { id:"t36", type:"RITM", cat:"Access", sub:"Leaver", ci:"Entra ID",
+    from:"HR People Team", pri:"P1", legit:true,
+    subj:"Leaver: lab.user1, last day today",
+    body:`<p>lab.user1 leaves today at 17:00 (resigned, ref HR-2317). Please remove all of their access.</p>
+      <p><b>Don't delete the account yet.</b> Their manager needs 30 days to review their files.</p>`,
+    tasks:[
+      "Users → lab.user1 → Edit properties → untick <b>Account enabled</b>.",
+      "Users → lab.user1 → Overview → <b>Revoke sessions</b>.",
+      "Users → lab.user1 → <b>Groups</b>: remove every membership (it should only be GRP-Support if your mover ticket was clean). Also remove them from AU-Lab.",
+      "Users → lab.user1 → <b>Authentication methods</b>: delete the registered Authenticator.",
+      "Private window: try to sign in as lab.user1. It should fail because the account is disabled."
+    ],
+    hint:`Order matters: block sign-in, then kill sessions, then remove access. Deletion comes last, after the hold period. Deleted users stay in <i>Deleted users</i> for 30 days and can be ${T("restored","Restoring a deleted user brings back most of its properties and group memberships.")}.`,
+    pushback:"HR is the source of truth for leavers, with a reference and a clear instruction. Delaying a leaver is how former staff keep access. Act fast, and follow the 'don't delete' part exactly.",
+    verify:"Audit logs → filter Target = lab.user1, today. Then Sign-in logs → lab.user1 → your test fails with an error saying the account is disabled.",
+    learn:["revoke","restore"],
+    evidence:{
+      audit:[["Core Directory","Update user","you","lab.user1 (AccountEnabled: true → false)"],["Core Directory","Update StsRefreshTokenValidFrom Timestamp","you","lab.user1 (Revoke sessions)"],["Core Directory","Remove member from group","you","lab.user1 → GRP-Support"],["Core Directory","Remove member from administrative unit","you","lab.user1 → AU-Lab"],["Authentication Methods","Admin deleted security info","you","lab.user1 (Microsoft Authenticator)"]],
+      mail:{ from:"Lab Inbox (evidence card)", tag:"sim", subj:"Leaver complete: lab.user1's full story in the audit log",
+        body:`<p>Filter the audit log on lab.user1 and read it top to bottom: joiner (Sales) → mover (Support) → incident → leaver. That's the identity lifecycle, and the audit log is its biography.</p>
+        <p>Every manual click here is a chance to miss something. On Day 4, an access review checks your work, and lifecycle workflows can automate it.</p>` } } }
+  ]},
+
+/* ---------------- DAY 4 ---------------- */
+{ title:"Day 4: PIM and governance", desc:"Just-in-time admin, approvals, access reviews, access packages and lifecycle workflows.",
+  tickets:[
+  { id:"t41", type:"CHG", cat:"Access", sub:"Privileged access", ci:"PIM",
+    from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
+    subj:"Make Jamie's admin role just-in-time",
+    body:`<p>Jamie's Privileged Role Administrator assignment is still <b>active 24/7</b>. Please convert it to <b>eligible</b> in PIM, so Jamie activates it only when needed.</p>
+      <p>Activation should require MFA, a justification and approval by you, and last 2 hours at most.</p>`,
+    tasks:[
+      "Before you start: confirm <b>your own</b> account still has Global Administrator, so you can't lock yourself out.",
+      "Identity Governance → Privileged Identity Management → Microsoft Entra roles → Roles → Privileged Role Administrator → Add assignments → SC300-Lab-Admin, Assignment type <b>Eligible</b>, end date in 6 months.",
+      "Same role → Assignments → <b>Active assignments</b> → remove SC300-Lab-Admin's active assignment.",
+      "Same role → Role settings → Edit: activation maximum duration 2 hours, require Azure MFA, require justification, <b>require approval</b> with yourself as approver.",
+      "Role settings → <b>Notification</b> tab: make sure you get role activation alerts and approval requests."
+    ],
+    hint:`${T("Eligible","The user can activate the role when needed, but holds no admin rights until they do. A stolen session on an eligible-only account can't use the role straight away.")} vs ${T("active","The role is always on. Anyone who compromises the account gets the role immediately.")}: same role, much smaller attack window.`,
+    verify:"PIM → Microsoft Entra roles → <b>Resource audit</b>. Also the Entra audit log → Service = PIM (e.g. <code>Add eligible member to role in PIM completed (timebound)</code>). Compare this assignment email with the Day 0 one.",
+    learn:["pimassign","pimsettings","pim"],
+    evidence:{
+      audit:[["PIM","Add eligible member to role in PIM completed (timebound)","you","SC300-Lab-Admin → Privileged Role Administrator (eligible, 6 months)"],["PIM","Remove member from role in PIM completed (permanent)","you","SC300-Lab-Admin → Privileged Role Administrator (active)"],["PIM","Update role setting in PIM","you","Privileged Role Administrator: MFA, justification, approval, max 2h"]],
+      mail:{ from:"PIM notifications", tag:"real", subj:"PIM: SC300-Lab-Admin is now eligible for Privileged Role Administrator",
+        body:`<p><b>Role:</b> Privileged Role Administrator<br><b>Assignee:</b> SC300-Lab-Admin<br><b>Type:</b> Eligible, ends in 6 months<br><b>Assigned by:</b> you</p>
+        <p>Compare this with the Day 0 email: <i>Active, permanent</i> has become <i>Eligible, time-bound</i>. Jamie still <b>can</b> do the job, but holds no standing admin rights between tasks.</p>` } } },
+
+  { id:"t42", type:"RITM", cat:"Access", sub:"Privileged access", ci:"PIM",
+    from:"Jamie Patel, Identity Engineer", pri:"P2", legit:true,
+    subj:"Activation request incoming, please approve",
+    body:`<p>Hi! I need Privileged Role Administrator this morning to review role assignments for the audit. I'll send the activation request now. Could you approve it?</p>
+      <p>For the lab, you'll play both of us: sign in as SC300-Lab-Admin to request, and as yourself to approve.</p>`,
+    tasks:[
+      "Private window, signed in as SC300-Lab-Admin: PIM → My roles → Eligible assignments → Privileged Role Administrator → <b>Activate</b>. Justification: <i>Audit prep: review role assignments (ticket t42)</i>. Complete the MFA prompt.",
+      "As yourself: PIM → <b>Approve requests</b> → check requester, justification, time and duration → Approve, with a comment.",
+      "Back as SC300-Lab-Admin: My roles → <b>Active assignments</b> shows the role with an end time. Click <b>Deactivate</b> when you're done.",
+      "As yourself: PIM → Microsoft Entra roles → Resource audit: find the request, the approval and the deactivation."
+    ],
+    hint:"Approvers check four things: is it the person you expect, is the timing normal, does the justification match real work, and is the duration sensible? This request passes all four. The next one won't.",
+    pushback:"Jamie told you in advance, the time is normal, and the justification matches real work. Approving good requests promptly is half of the approver's job. If approvals are a bottleneck, people start pushing for permanent access.",
+    verify:"PIM → Microsoft Entra roles → Resource audit, or the Entra audit log → Service = PIM.",
+    learn:["pimapprove","pim"],
+    evidence:{
+      audit:[["PIM","Add member to role request approved (PIM activation)","you","SC300-Lab-Admin → Privileged Role Administrator"],["PIM","Add member to role completed (PIM activation)","SC300-Lab-Admin","Privileged Role Administrator"]],
+      mail:{ from:"PIM notifications", tag:"real", subj:"PIM: SC300-Lab-Admin has activated Privileged Role Administrator",
+        body:`<p>PIM can email the approver when a request arrives, the requester when it's approved, and admins when the role is activated. You chose who gets which in the role's <b>Notification</b> settings.</p>
+        <p>The activation has an end time. When it passes, the role drops away by itself, with no clean-up ticket needed.</p>` } } },
+
+  { id:"t43", type:"INC", cat:"Security", sub:"Privileged access", ci:"PIM",
+    from:"PIM notifications", pri:"P1", legit:false,
+    subj:"PIM: SC300-Lab-Admin requests approval for Privileged Role Administrator",
+    body:`<p><b>Requester:</b> SC300-Lab-Admin<br><b>Requested at:</b> 02:07<br><b>Duration:</b> 2 hours (maximum)<br><b>Justification:</b> "fix"</p>
+      <p>Context you can see: SC300-Lab-Admin's sign-in at 02:04 came from <b>198.51.100.77</b>, in a country Jamie has never signed in from. Jamie's out-of-office says they're on leave this week.</p>`,
+    tasks:[],
+    verify:"Sign-in logs → SC300-Lab-Admin → around 02:04: IP, location, device and how MFA was satisfied. PIM → Approve requests → Deny takes a comment.",
+    learn:["pimapprove","signins"],
+    choices:[
+      ["Approve. It's Jamie's own eligible role and the request passed MFA.",0,"Eligible means Jamie <i>can ask</i>, not that every request should be approved. Passing MFA proves someone completed MFA, not that it was Jamie. Sessions and tokens can be stolen."],
+      ["Approve it, but only for 30 minutes.",0,"Thirty minutes of Privileged Role Administrator is plenty of time to create a new Global Administrator. A shorter duration doesn't fix an illegitimate request."],
+      ["Deny with a comment. Contact Jamie through a known channel and check SC300-Lab-Admin's sign-ins. If it wasn't Jamie, revoke sessions and reset credentials.",1,"Right. Off-hours, a one-word justification, an unknown location and a requester who's on leave: each is a red flag, and together they're an incident. This is the moment approval exists for."]
+    ],
+    consequence:{ audit:[["PIM","Add member to role request approved (PIM activation)","you","SC300-Lab-Admin → Privileged Role Administrator",1],["Core Directory","Add member to role","SC300-Lab-Admin","svc-backup01@{d} → Global Administrator",1]],
+      toast:"Minutes after your approval, SC300-Lab-Admin made a brand-new account Global Administrator." } },
+
+  { id:"t44", type:"RITM", cat:"Access", sub:"Privileged access", ci:"PIM",
+    from:"Jamie Patel, Identity Engineer", pri:"P3", legit:false,
+    subj:"Can we go back to permanent PRA? Activating is slowing me down",
+    body:`<p>Approving every activation is a pain for both of us. Could you just make my Privileged Role Administrator assignment <b>permanent active</b> again?</p>
+      <p>I had it permanent for months with no issues. (Also, weird about that 2 a.m. thing. Wasn't me!)</p>`,
+    tasks:[],
+    verify:"PIM → Privileged Role Administrator → Role settings: what could you tune instead (approvers, duration) without removing just-in-time?",
+    learn:["pimsettings"],
+    choices:[
+      ["Make it permanent active again. Jamie is trusted and it's been fine.",0,"\"No issues so far\" is how standing access always looks until the account is compromised. The 2 a.m. request <i>was</i> the issue, and approval is what stopped it."],
+      ["Keep it eligible but remove the MFA and approval requirements.",0,"Eligible without MFA or approval is active with extra clicks. Last night's attacker would have activated the role unopposed. If approval is the bottleneck, tune it. Don't strip every control."],
+      ["Keep it eligible. Offer to tune the settings instead, for example a second approver so requests don't wait on you, and explain what the 2 a.m. request shows.",1,"Right. You can tune just-in-time access to be less painful, but the person it protects doesn't get to remove it. Jamie's own account was the target last night."]
+    ],
+    consequence:{ audit:[["PIM","Add member to role in PIM completed (permanent)","you","SC300-Lab-Admin → Privileged Role Administrator (active, permanent)",1]],
+      toast:"Standing privileged access is back: SC300-Lab-Admin is permanently active again." } },
+
+  { id:"t45", type:"RITM", cat:"Governance", sub:"Access review", ci:"GRP-Support",
+    from:"Riley Chen, Internal Audit", pri:"P2", legit:true,
+    subj:"Access review: who still needs GRP-Support?",
+    body:`<p>The Larkspur audit ended last week. Please run an <b>access review</b> of GRP-Support, so someone accountable confirms every member still needs access.</p>
+      <p>I expect Jordan's guest account to be removed. If anyone else shows up who shouldn't be there, remove them too.</p>`,
+    tasks:[
+      "Identity Governance → Access reviews → New access review: <b>Teams + Groups</b> → select GRP-Support. Scope: All users.",
+      "Reviewers: Selected user(s) → yourself. Duration 1 day, one-time review. Under settings, turn on decision helpers (inactivity) and <b>Auto apply results</b>.",
+      "Start it. Open the review as the reviewer (from the email or the My Access portal). <b>Deny</b> Jordan's guest account, with a reason.",
+      "If lab.user1 appears, your Day 3 leaver missed a group. Deny it too.",
+      "Stop the review and <b>apply results</b> (or let auto-apply run). Confirm GRP-Support no longer contains the guest."
+    ],
+    hint:`Access reviews catch ${T("leftover access","Access that was right once but nobody removed: finished contractors, movers, leavers, project groups that outlived the project.")}. That's the gap between what joiner and leaver tickets promise and what actually happened.`,
+    pushback:"Internal Audit is asking for evidence that access is still needed, and the guest's engagement has ended. This is exactly the governance an SC-300 admin should welcome.",
+    verify:"Access reviews → the review → <b>Results</b> and Audit logs → Service = Access Reviews. GRP-Support → Members confirms the outcome.",
+    learn:["reviews","reviewcreate"],
+    evidence:{
+      audit:[["Access Reviews","Create access review","you","GRP-Support review"],["Access Reviews","Deny decision","you","Jordan Reyes (guest)"],["Access Reviews","Apply review","you","GRP-Support review"],["Core Directory","Remove member from group","Access Reviews (service)","Jordan Reyes (guest) → GRP-Support"]],
+      mail:{ from:"Access review notifications", tag:"real", subj:"Please review access to GRP-Support",
+        body:`<p>Real tenants send this email to reviewers when a review starts, with reminders before it ends.</p>
+        <p>Look at the last audit row: the removal was performed by the review service, not by you. Access reviews leave their own evidence trail, and auditors love that.</p>
+        <p>The guest still exists in your directory. The review removed group access, not the account. You can configure reviews of guests to block and then remove denied guests too.</p>` } } },
+
+  { id:"t46", type:"RITM", cat:"Governance", sub:"Access package", ci:"Entitlement management",
+    from:"Dana Okafor, Support Lead", pri:"P3", legit:true,
+    subj:"Self-service Support access that expires on its own",
+    body:`<p>Temporary people join Support every few weeks, and we always forget to remove them afterwards (see Riley's review!).</p>
+      <p>Can we have a request-and-approve process where access <b>expires automatically</b>?</p>`,
+    tasks:[
+      "Identity Governance → Entitlement management → Access packages → New access package: name <code>AP-Support-Temp</code>, catalog <i>General</i>.",
+      "Resource roles → Groups and Teams → GRP-Support → role <b>Member</b>.",
+      "Requests: <i>For users in your directory</i> → Specific users and groups → SC300-Lab-Helpdesk. Require approval = Yes, approver = you, require requestor justification.",
+      "Lifecycle: access package assignments expire after <b>30 days</b>. Create.",
+      "As Taylor: open the My Access portal, request AP-Support-Temp with a justification. As yourself: approve. Then confirm Taylor is in GRP-Support and the assignment shows an end date."
+    ],
+    hint:`An ${T("access package","A bundle of access (groups, apps, SharePoint sites) with a policy saying who can request it, who approves, and when it expires.")} turns \"remember to remove it\" into \"it removes itself\".`,
+    verify:"Entitlement management → AP-Support-Temp → <b>Assignments</b> (end date) and <b>Requests</b>. Audit logs → Service = Entitlement Management.",
+    learn:["elm","elmcreate"],
+    evidence:{
+      audit:[["Entitlement Management","Create access package","you","AP-Support-Temp"],["Entitlement Management","Create access package assignment policy","you","AP-Support-Temp: approval required, expires after 30 days"],["Entitlement Management","User requests access package assignment","SC300-Lab-Helpdesk","AP-Support-Temp"],["Entitlement Management","Approve access package assignment request","you","SC300-Lab-Helpdesk → AP-Support-Temp"],["Entitlement Management","Fulfill access package assignment request","Entitlement Management (service)","SC300-Lab-Helpdesk → AP-Support-Temp (expires in 30 days)"],["Core Directory","Add member to group","Entitlement Management (service)","SC300-Lab-Helpdesk → GRP-Support"]],
+      mail:{ from:"Entitlement management notifications", tag:"real", subj:"Your request for AP-Support-Temp has been approved",
+        body:`<p>Entitlement management emails approvers when a request needs a decision, and requesters when access is granted. It also emails them before the assignment expires.</p>
+        <p>In 30 days, Taylor's GRP-Support membership disappears on its own. Compare that with Jordan's guest access, which lasted until an audit caught it.</p>` } } },
+
+  { id:"t47", type:"CHG", cat:"Governance", sub:"Automation", ci:"Lifecycle workflows",
+    from:"HR People Team", pri:"P3", legit:true, optional:true,
+    subj:"(Optional, needs a Governance license) Automate the leaver steps",
+    body:`<p>lab.user1's offboarding took a dozen manual clicks. <b>Lifecycle workflows</b> can run leaver tasks automatically.</p>
+      <p>This needs a <b>Microsoft Entra ID Governance</b> license (or trial). Entra ID P2 on its own isn't enough. Skip this ticket if you don't have one.</p>`,
+    tasks:[
+      "Create a throwaway test user <code>lab.user2@{d}</code> and add it to GRP-Support. (Don't use lab.user1, whose leaver is already done.)",
+      "Identity Governance → Lifecycle workflows → Create workflow → template <b>Real-time employee termination</b>.",
+      "Review the template's tasks: <i>Remove user from all groups</i>, <i>Remove user from all Teams</i> and <i>Delete User Account</i>. Deleting is fine for a throwaway user, but notice that this template would delete a real leaver immediately, ignoring a 30-day hold like HR asked for on Day 3.",
+      "Create it, then <b>Run on demand</b> for lab.user2.",
+      "Workflow → <b>Workflow history</b>: check each task's result. Then check lab.user2's groups and status."
+    ],
+    hint:"Automate only what you've already done by hand and understood. A workflow that deletes the wrong account does it perfectly, every time.",
+    verify:"Lifecycle workflows → the workflow → Workflow history (per user, per task). Audit logs → Service = Lifecycle Workflows.",
+    learn:["lcw"],
+    evidence:{
+      audit:[["Lifecycle Workflows","Create workflow","you","Real-time employee termination (lab)"],["Lifecycle Workflows","On-demand workflow execution completed","you","lab.user2@{d}"],["Core Directory","Remove member from group","Lifecycle Workflows (service)","lab.user2 → GRP-Support"],["Core Directory","Delete user","Lifecycle Workflows (service)","lab.user2 (soft-deleted, restorable for 30 days)"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Leaver workflow ran for lab.user2",
+        body:`<p>Workflow history shows each task with its own status. If one fails, for example on a permissions error, the others still report.</p>
+        <p>You now have three layers: a <b>process</b> (leaver tickets), <b>automation</b> (lifecycle workflows) and a <b>check</b> (access reviews). Real identity governance needs all three.</p>` } } }
+  ]}
+];
+
+/* ================= STATE ================= */
+const KEY = "sc300-ticket-queue-v4";
+const fresh = () => ({ day:0, arrived:{}, assigned:{}, closed:{}, checks:{}, log:{}, push:{}, inbox:[], audit:[], sel:null, rec:null, auto:true, dom:DEFAULT_DOM, folder:"inbox" });
+let S = load();
+function load(){
+  try{ const x = JSON.parse(localStorage.getItem(KEY)); if(x && Array.isArray(x.inbox)) return Object.assign(fresh(), x); }catch(e){}
+  return fresh();
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+let pick = null;    // {id, k}: resolution being prepared (not persisted)
+let query = "";
+
+const TK = {};
+DAYS.forEach((d,i)=>d.tickets.forEach(t=>{ t.day = i; TK[t.id] = t; }));
+const ALL = DAYS.flatMap(d=>d.tickets);
+const INJ = [];
+DAYS.forEach((d,i)=>(d.injects||[]).forEach(x=>{ x.day = i; x.inject = true; x.legit = false; x.tasks = x.tasks || []; TK[x.id] = x; INJ.push(x); }));
+const RECS = ALL.concat(INJ);
+const THREATS = ALL.filter(t=>!t.legit).concat(INJ);
+const $ = s => document.querySelector(s);
+const clock = ms => new Date(ms).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+const now = () => clock(Date.now());
+const keyOf = it => it.kind + ":" + it.id;
+
+/* ================= SERVICE DESK MODEL ================= */
+const GROUP = "Identity & Access Management";
+const TYPES = { RITM:["Requested Item","SCTASK","Catalog tasks"], INC:["Incident","TASK","Incident tasks"], CHG:["Change Request","CTASK","Change tasks"] };
+const typeOf = t => TYPES[t.type] ? t.type : "RITM";
+const seq = t => (t.inject ? 500 : 0) + +t.id.slice(1);
+const recNo = t => typeOf(t) + String(10000 + seq(t)).padStart(7,"0");
+const taskNo = (t,i) => TYPES[typeOf(t)][1] + String(100000 + seq(t)*10 + i + 1).padStart(7,"0");
+/* P → [impact, urgency, priority (impact × urgency matrix), resolution SLA in hours] */
+const PRI = { P1:["1 - High","2 - Medium","2 - High",4], P2:["2 - Medium","2 - Medium","3 - Moderate",8], P3:["3 - Low","3 - Low","5 - Planning",24] };
+const contactType = t => t.contact || (/phone/i.test(t.from) ? "Phone" : isSystem(t.from) ? "Integration" : "Email");
+
+/* What closing with choice k does to the record. ok: 1 right, 0 wrong, 2 skip. */
+function outcome(t, k){
+  const ok = choicesFor(t)[k][1], ty = typeOf(t);
+  if(t.inject) return { act: choicesFor(t)[k][3] || "Close", state:"Resolved", code: ok === 1 ? "Contained" : "Resolved (risk remains)" };
+  if(ok === 2) return { act:"Cancel: optional lab skipped", state: ty==="RITM" ? "Closed Skipped" : "Canceled", code:"Cancelled" };
+  if(t.legit && ok === 0) return { act:"Put on hold: awaiting caller", state:"On Hold", code:"Awaiting caller" };
+  if(t.legit ? ok === 1 : ok === 0) return { act:"Fulfil and resolve", state: ty==="RITM" ? "Closed Complete" : ty==="INC" ? "Resolved" : "Closed", code:"Fulfilled" };
+  return { act:"Refuse: close without action", state: ty==="RITM" ? "Closed Incomplete" : ty==="INC" ? "Resolved" : "Canceled", code:"Refused (not actioned)" };
+}
+function stateOf(t){
+  const c = S.closed[t.id];
+  if(c) return outcome(t, c.k).state;
+  return S.assigned[t.id] ? "In Progress" : "New";
+}
+const stateCls = st => st==="New" ? "open" : st==="In Progress" ? "prog" : st==="On Hold" ? "sim" : /Complete|Resolved|^Closed$/.test(st) ? "good" : "skip";
+function verdictChip(id){
+  const c = S.closed[id]; if(!c) return "";
+  return c.ok===true ? `<span class="tag good">✓ right call</span>` : c.ok===false ? `<span class="tag bad">✗ wrong call</span>` : `<span class="tag skip">skipped</span>`;
+}
+
+/* ================= PEOPLE / ADDRESSES ================= */
+const SYSTEM = /notifications|workflow|phone log|Lab Inbox|Lab coach|alerts|Invitation on behalf|^Service Desk$/i;
+const TEAMS = { "HR People Team":"hr", "Security Operations (SOC)":"soc" };
+const nameOf = f => String(f).replace(/\s*<[^>]*>/,"").split(",")[0].trim();
+const roleOf = f => { const p = String(f).replace(/\s*<[^>]*>/,"").split(","); return p.length > 1 ? p.slice(1).join(",").trim() : ""; };
+const isSystem = f => SYSTEM.test(f) && !/</.test(f);
+function addrOf(f){
+  const m = String(f).match(/<([^>]+)>/); if(m) return m[1];
+  if(isSystem(f)) return "";
+  const n = nameOf(f);
+  if(TEAMS[n]) return TEAMS[n] + "@{d}";
+  return n.toLowerCase().replace(/[^a-z ]/g,"").trim().replace(/\s+/g,".") + "@{d}";
+}
+const isExternal = f => { const a = addrOf(f); return !!a && !a.endsWith("@{d}"); };
+const firstName = f => nameOf(f).split(" ")[0];
+const initials = n => n.replace(/[^A-Za-z ]/g,"").split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("") || "?";
+const AVC = ["--accent","--real","--sim","--warn","--muted"];
+function avatar(f){
+  if(isSystem(f)) return `<div class="av sys" aria-hidden="true">⚙</div>`;
+  const n = nameOf(f); let h = 0; for(const c of n) h = (h*31 + c.charCodeAt(0)) >>> 0;
+  return `<div class="av" style="--c:var(${AVC[h % AVC.length]})" aria-hidden="true">${esc(initials(n))}</div>`;
+}
+const ME = "Me (identity admin)";
+const meAddr = () => `Me &lt;admin@${esc(S.dom)}&gt;`;
+
+/* ================= ENGINE ================= */
+function nextFor(day){ return DAYS[day].tickets.find(t=>!S.arrived[t.id]) || null; }
+function log(id, who, kind, text){ (S.log[id] = S.log[id] || []).push({ t:Date.now(), who, kind, text }); }
+
+function deliverNext(quiet){
+  const t = nextFor(S.day);
+  if(!t) return null;
+  S.arrived[t.id] = Date.now();
+  log(t.id, "System", "sys", `Record created from ${contactType(t).toLowerCase()} · Caller: ${nameOf(t.from)} · Assignment group: ${GROUP} · State: New`);
+  S.inbox.unshift({ kind:"ticket", id:t.id, t:Date.now(), read:false });
+  if(!quiet) toast(`New ${TYPES[typeOf(t)][0].toLowerCase()}: ${recNo(t)}`, esc(t.subj), t.pri === "P1");
+  save(); renderAll();
+  return t;
+}
+
+function triggerInject(id){
+  const x = TK[id]; if(!x || !x.inject || S.arrived[id]) return false;
+  S.arrived[id] = Date.now();
+  addAudit(x.trigger, true, id);
+  log(id, "System", "sys", `Incident raised automatically from ${x.contact === "Email" ? "an email to the service desk" : "a " + x.contact.toLowerCase() + " event"} · Assignment group: ${GROUP} · State: New`);
+  S.inbox.unshift({ kind:"inject", id, t:Date.now(), read:false });
+  toast(`⚡ ${esc(nameOf(x.from))}`, esc(x.subj), true);
+  if(x.push) pushPrompt(x);
+  save(); renderAll();
+  return true;
+}
+
+/* Simulated Authenticator prompt. With number matching the number is on the sign-in screen, which the user doesn't have. */
+function pushPrompt(x){
+  const el = document.createElement("div"); el.className = "toast alert keep"; el.id = "push";
+  el.innerHTML = `<b>Authenticator: Are you trying to sign in?</b>lab.user1@${esc(S.dom)}<br>Enter the number shown on your sign-in screen to approve.<input aria-label="Number from the sign-in screen" placeholder="Number" inputmode="numeric"><div class="tb"><button data-r="deny">No, it's not me</button><button data-r="ok">Approve</button></div>`;
+  $("#toasts").prepend(el);
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const deny = b.dataset.r === "deny";
+    S.push[x.id] = deny ? "deny" : "approve";
+    log(x.id, "lab.user1", "sys", deny ? "Authenticator: user selected \"No, it's not me\" (suspicious activity reported)" : "Authenticator: user approved a sign-in they didn't start");
+    if(!deny) addAudit([["Sign-in logs","Sign-in (interactive)","lab.user1@{d}","203.0.113.77 · MFA approved in Authenticator · Success",1]], true, x.id);
+    el.className = "toast" + (deny ? "" : " alert");
+    el.innerHTML = deny ? `<b>Denied ✓</b>Good call. You didn't start this sign-in, so there's no number on your screen to enter. Now work the incident.`
+      : `<b style="color:var(--phish)">You approved a sign-in you didn't start.</b>There was no number on your screen because you weren't signing in. In a real attack the attacker phones the user and reads their number out. Now work the incident.`;
+    save(); renderAll(); setTimeout(()=>el.remove(), 8000);
+  });
+}
+
+function choicesFor(t){
+  if(t.choices) return t.choices;
+  const c = [
+    ["Done. I've completed every task on this record in the tenant.", 1, "Closed. The evidence this change leaves behind is now in your inbox and audit log. Go and find the same records in your real tenant."],
+    ["Before I do this, can you confirm who approved it and why it's needed?", 0, t.pushback || "This was a legitimate request from the right person through a normal channel. Pushing back on everything is its own failure: the business stops trusting IT and works around you. Save pushback for real red flags: unusual channels, pressure, or more access than the task needs."]
+  ];
+  if(t.optional) c.push(["Skipping this optional lab for now.", 2, "Skipped. It won't count for or against you. You can reset later if you change your mind."]);
+  return c;
+}
+
+const allChecked = t => t.tasks.every((_,i)=>S.checks[t.id] && S.checks[t.id][i]);
+
+function assign(id){
+  if(S.assigned[id] || S.closed[id]) return;
+  S.assigned[id] = Date.now();
+  log(id, ME, "sys", "Assigned to: (empty) → Me · State: New → In Progress");
+  save(); renderAll();
+}
+
+function setTask(t, i, on){
+  S.checks[t.id] = S.checks[t.id] || [];
+  S.checks[t.id][i] = on;
+  log(t.id, ME, "sys", `${taskNo(t,i)} State: ${on ? "Open → Closed Complete" : "Closed Complete → Open"}`);
+  if(pick && pick.id===t.id && !allChecked(t) && choicesFor(t)[pick.k][1]===1) pick = null;
+  save();
+}
+
+function addAudit(rows, bad, id){
+  const t = now();
+  (rows||[]).forEach(r=>S.audit.unshift({ t, svc:r[0], act:r[1], by:r[2], tgt:r[3], bad:bad || !!r[4], id }));
+}
+
+function close(id, k){
+  const t = TK[id]; if(!t || S.closed[id] || !S.arrived[id]) return false;
+  const ch = choicesFor(t)[k]; if(!ch) return false;
+  if(!S.assigned[id]){ toast("Assign it first", "Assign the record to yourself before you change its state.", true); return false; }
+  if(ch[1] === 1 && t.legit && !allChecked(t)){
+    toast("Tasks still open", "Close every task (after doing it in your tenant) before you resolve the record.", true);
+    return false;
+  }
+  pick = null;
+  const o = outcome(t, k);
+  S.closed[id] = { k, ok: ch[1] === 2 ? null : ch[1] === 1, t:Date.now() };
+  log(id, ME, "sys", `State: In Progress → ${o.state} · Close code: ${o.code}`);
+  log(id, ME, "comment", stripTags(ch[0]));
+  const fu = followUp(t); if(fu) log(id, nameOf(t.from), "caller", fu);
+  if(ch[1] === 1 && t.evidence){
+    addAudit(t.evidence.audit, false, id);
+    if(t.evidence.mail){
+      S.inbox.unshift({ kind:"mail", id, t:Date.now(), read:false });
+      toast(`New mail: ${esc(t.evidence.mail.from)}`, esc(t.evidence.mail.subj));
+    }
+  } else if(ch[1] === 0 && !t.legit && t.consequence){
+    addAudit(t.consequence.audit, true, id);
+    S.inbox.unshift({ kind:"alert", id, t:Date.now(), read:false });
+    toast("Security alert", esc(t.consequence.toast), true);
+  }
+  daySummary(t.day);
+  if(S.auto && S.day === t.day && nextFor(t.day)) deliverNext();
+  save(); renderAll();
+  return true;
+}
+
+function daySummary(day){
+  if(!DAYS[day].tickets.every(t=>S.closed[t.id])) return;
+  if(S.inbox.some(it=>it.kind==="summary" && it.id===String(day))) return;
+  S.inbox.unshift({ kind:"summary", id:String(day), t:Date.now(), read:false });
+}
+
+/* The caller's comment after you close the record (generic, by outcome). */
+function followUp(t){
+  const c = S.closed[t.id]; if(!c || isSystem(t.from) || isExternal(t.from)) return null;
+  if(t.legit && c.ok) return "Thanks, that's working on my side. Appreciate the quick turnaround.";
+  if(t.legit && c.ok === false) return "I thought I'd given you everything you need. This came through the normal process. Could you pick it up, please?";
+  if(!t.legit && c.ok) return "OK, understood. Thanks for explaining.";
+  if(!t.legit && c.ok === false) return "Brilliant, thank you!!";
+  return null;
+}
+
+function stats(){
+  let good=0, bad=0;
+  for(const id in S.closed){ if(S.closed[id].ok===true) good++; else if(S.closed[id].ok===false) bad++; }
+  return { good, bad, closed: ALL.filter(t=>S.closed[t.id]).length, open: Object.keys(S.arrived).filter(id=>!S.closed[id]).length,
+    threats: THREATS.filter(t=>S.closed[t.id] && S.closed[t.id].ok).length };
+}
+
+/* ================= NAVIGATION MODEL ================= */
+const TAGTXT = { real:"REAL-WORLD", sim:"AUDIT-ONLY", phish:"LOOK-ALIKE" };
+const stripTags = h => String(h).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+const FOLDERS = [
+  ["Mail", [["inbox","Inbox"], ["notes","Notifications"]]],
+  ["Service desk", [["q_group","Assigned to my group"], ["q_me","Assigned to me"], ["q_closed","Resolved and closed"], ["q_all","All records"]]],
+  ["Tenant", [["audit","Audit log"]]]
+];
+const folderName = f => FOLDERS.flatMap(g=>g[1]).find(x=>x[0]===f)[1];
+const isDesk = f => f.startsWith("q_");
+
+function recordsFor(f){
+  const arr = RECS.filter(t=>S.arrived[t.id]).sort((a,b)=>S.arrived[b.id]-S.arrived[a.id]);
+  if(f==="q_group") return arr.filter(t=>!S.closed[t.id]);
+  if(f==="q_me") return arr.filter(t=>!S.closed[t.id] && S.assigned[t.id]);
+  if(f==="q_closed") return arr.filter(t=>S.closed[t.id]);
+  return arr;
+}
+function mailFor(f){ return f==="notes" ? S.inbox.filter(i=>i.kind!=="ticket") : S.inbox; }
+
+function alertBody(t){
+  return `<p>Activity was detected shortly after you closed <b>${recNo(t)}</b>:</p><ul>${t.consequence.audit.map(r=>`<li><b>${esc(r[1])}</b> by ${dm(esc(r[2]))}: ${dm(esc(r[3]))}</li>`).join("")}</ul><p>Check the red rows in the Audit log, then reopen the record to read the review.</p>`;
+}
+/* Normalised view of a mail item for the list and search. */
+function view(it){
+  const t = TK[it.id];
+  if(it.kind === "ticket") return { from:"Service Desk", who:"Service Desk", subj:`${recNo(t)} assigned to your group: ${t.subj}`, prev:`Caller: ${nameOf(t.from)} · ${stripTags(dm(t.body))}`,
+    chips:`<span class="tag ${t.pri}">${PRI[t.pri][2]}</span><span class="tag ${stateCls(stateOf(t))}">${stateOf(t)}</span>` };
+  if(it.kind === "mail"){ const m = t.evidence.mail; return { from:m.from, who:m.from, subj:m.subj, prev:stripTags(dm(m.body)), chips:`<span class="tag ${m.tag}">${TAGTXT[m.tag]}</span>` }; }
+  if(it.kind === "inject") return { from:t.from, who:nameOf(t.from), subj:t.subj, prev:stripTags(dm(t.body)),
+    chips:`${t.tag?`<span class="tag ${t.tag}">${TAGTXT[t.tag]}</span>`:''}<span class="tag inj">⚡ Inject</span><span class="tag ${stateCls(stateOf(t))}">${recNo(t)} · ${stateOf(t)}</span>` };
+  if(it.kind === "alert") return { from:"Security alerts", who:"Security alerts", subj:t.consequence.toast, prev:`After you closed ${recNo(t)}`, chips:`<span class="tag bad">Alert</span><span class="tag sim">AUDIT-ONLY</span>` };
+  const d = DAYS[+it.id];
+  return { from:"Lab coach", who:"Lab coach", subj:`${d.title.split(":")[0]} complete: your results`, prev:"Score, mistakes and what to review.", chips:"" };
+}
+
+/* ================= RENDER ================= */
+function renderAll(){ renderNav(); renderAudit(); renderMain(); }
+
+function renderNav(){
+  const st = stats();
+  $("#cOpen").textContent = st.open; $("#cGood").textContent = st.good; $("#cBad").textContent = st.bad;
+  $("#cClosed").textContent = st.closed; $("#cTotal").textContent = ALL.length;
+  $("#cThreat").textContent = st.threats; $("#cThreatTotal").textContent = THREATS.length;
+  const counts = { inbox:S.inbox.filter(i=>!i.read).length, notes:S.inbox.filter(i=>i.kind!=="ticket"&&!i.read).length,
+    q_group:recordsFor("q_group").length, q_me:recordsFor("q_me").length, audit:S.audit.filter(r=>r.bad).length };
+  $("#folders").innerHTML = FOLDERS.map(([g,fs])=>`<div class="fgroup"><div class="navh">${g}</div><div class="folders">${
+    fs.map(([k,n])=>`<button class="folder ${S.folder===k?'on':''}" data-f="${k}"><span>${n}</span><span class="n">${counts[k]||""}</span></button>`).join("")}</div></div>`).join("");
+  $("#folders").querySelectorAll(".folder").forEach(b=>b.onclick=()=>{ S.folder=b.dataset.f; S.rec=null; pick=null; save(); renderAll(); $("#app").classList.remove("reading"); });
+  $("#days").innerHTML = DAYS.map((d,i)=>{
+    const n = d.tickets.filter(t=>S.closed[t.id]).length;
+    return `<button class="dayb ${i===S.day?'on':''}" data-d="${i}"><span>${esc(d.title.split(":")[0])}<span class="dfull">:${esc(d.title.split(":").slice(1).join(":"))}</span></span><small>${n}/${d.tickets.length}</small></button>`;
+  }).join("");
+  $("#days").querySelectorAll(".dayb").forEach(b=>b.onclick=()=>{ S.day=+b.dataset.d; save(); renderNav(); });
+  $("#dayDesc").textContent = DAYS[S.day].desc;
+  const inj = DAYS[S.day].injects || [];
+  $("#injh").hidden = !inj.length;
+  $("#injects").innerHTML = inj.map(x=>`<button class="injb ${S.arrived[x.id]?'done':''}" data-x="${x.id}" ${S.arrived[x.id]?'disabled':''}><b>⚡ ${esc(x.btn[0])}</b><small>${S.arrived[x.id] ? "Triggered · " + recNo(x) : esc(x.btn[1])}</small></button>`).join("");
+  $("#injects").querySelectorAll(".injb").forEach(b=>b.onclick=()=>{
+    if(!triggerInject(b.dataset.x)) return;
+    if(S.folder !== "inbox" && S.folder !== "notes"){ S.folder = "inbox"; S.rec = null; renderAll(); }
+    openItem("inject:" + b.dataset.x);
+  });
+  const waiting = DAYS[S.day].tickets.filter(t=>!S.arrived[t.id]).length;
+  $("#next").disabled = !waiting;
+  $("#next").textContent = waiting ? `↻ Get next ticket (${waiting} left)` : "No more tickets today";
+  $("#auto").checked = !!S.auto;
+  if(document.activeElement !== $("#dom")) $("#dom").value = S.dom;
+  $("#app").classList.toggle("wide", S.folder === "audit" || isDesk(S.folder));
+}
+
+function renderMain(){
+  const L = $("#list"), q = query.toLowerCase();
+  if(S.folder === "audit"){ L.innerHTML = `<div class="lhead"><h2>Audit log</h2><span>Simulated portal view · newest first</span></div>` + $("#audit").innerHTML; return; }
+  if(isDesk(S.folder)){
+    if(S.rec && TK[S.rec] && S.arrived[S.rec]){ L.innerHTML = recordView(TK[S.rec]); wireRecord(TK[S.rec]); return; }
+    const recs = recordsFor(S.folder).filter(t=>!q || (recNo(t)+" "+t.subj+" "+nameOf(t.from)+" "+stateOf(t)).toLowerCase().includes(q));
+    let h = `<div class="lhead"><h2>${folderName(S.folder)}</h2><span>${recs.length} record${recs.length===1?'':'s'}${q?' matching':''}</span></div>`;
+    if(!recs.length) h += `<div class="empty">${Object.keys(S.arrived).length ? "No records in this view." : "No records yet. Click <b>Get next ticket</b> to start your shift."}</div>`;
+    else h += `<div class="tablewrap"><table class="rlist"><tr><th>Number</th><th>Short description</th><th>Caller</th><th>Priority</th><th>State</th><th>Assigned to</th><th>Opened</th><th>Review</th></tr>${
+      recs.map(t=>`<tr class="rec" data-id="${t.id}" tabindex="0"><td class="no">${recNo(t)}</td><td class="sd">${esc(t.subj)}</td><td>${esc(nameOf(t.from))}</td>
+        <td><span class="tag ${t.pri}">${PRI[t.pri][2]}</span></td><td><span class="tag ${stateCls(stateOf(t))}">${stateOf(t)}</span></td>
+        <td>${S.assigned[t.id] ? "Me" : '<span class="muted">(empty)</span>'}</td><td>${clock(S.arrived[t.id])}</td><td>${verdictChip(t.id)}</td></tr>`).join("")
+    }</table></div>`;
+    L.innerHTML = h;
+    L.querySelectorAll("tr.rec").forEach(r=>{
+      r.onclick = ()=>openRecord(r.dataset.id);
+      r.onkeydown = ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); openRecord(r.dataset.id); } };
+    });
+    return;
+  }
+  const items = mailFor(S.folder).filter(it=>{ if(!q) return true; const v = view(it); return (v.who+" "+v.subj+" "+v.prev).toLowerCase().includes(q); });
+  let h = `<div class="lhead"><h2>${folderName(S.folder)}</h2><span>${items.length} message${items.length===1?'':'s'}${q?' matching':''}</span></div>`;
+  if(!items.length) h += `<div class="empty">${S.inbox.length ? "Nothing here." : "Your inbox is empty. Click <b>Get next ticket</b> to start your shift."}</div>`;
+  h += items.map(it=>{
+    const v = view(it), k = keyOf(it);
+    return `<div class="mail ${it.read?'':'unread'} ${S.sel===k?'sel':''}" data-k="${k}" tabindex="0" role="button">
+      ${avatar(v.from)}
+      <div class="mc"><div class="r1"><span class="who">${esc(v.who)}</span><span class="time">${clock(it.t)}</span></div>
+      <div class="subj">${esc(v.subj)}</div><div class="prev">${esc(v.prev.slice(0,120))}</div>
+      ${v.chips?`<div class="chips">${v.chips}</div>`:''}</div></div>`;
+  }).join("");
+  L.innerHTML = h;
+  L.querySelectorAll(".mail").forEach(e=>{
+    e.onclick = ()=>openItem(e.dataset.k);
+    e.onkeydown = ev=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); openItem(e.dataset.k); } };
+  });
+}
+
+function renderAudit(){
+  $("#audit").innerHTML = !S.audit.length ? `<div class="empty">No events yet. Resolve a record to see the evidence it leaves.</div>` :
+    `<table class="audit"><tr><th>Time</th><th>Activity</th><th>Initiated by</th><th>Target</th></tr>${
+    S.audit.map(r=>`<tr class="${r.bad?'bad':''}"><td>${r.t}</td><td><b>${esc(r.act)}</b><br><span class="muted">${esc(r.svc)}</span></td><td>${dm(esc(r.by))}</td><td>${dm(esc(r.tgt))}</td></tr>`).join("")
+    }</table><p class="note">Activity names follow Entra's audit-log wording, but Microsoft renames things over time, so check your own tenant. Red rows are what happened because of a wrong call.</p>`;
+}
+
+const learnLinks = keys => (keys||[]).map(lk).join(" · ");
+const learnBox = keys => keys && keys.length ? `<div class="box"><h3>Microsoft Learn</h3>${learnLinks(keys)}</div>` : "";
+
+function msgBlock(from, addr, to, time, body){
+  return `<article class="msg"><div class="mh">${avatar(from)}
+    <div class="who"><b>${esc(nameOf(from))}</b>${roleOf(from)?` <span class="addr">· ${esc(roleOf(from))}</span>`:''}<br>
+    <span class="addr">${addr ? "&lt;" + dm(esc(addr)) + "&gt;" : "automated sender · simulated"}</span>
+    <div class="to">To: ${to}</div></div><span class="time">${time}</span></div>
+    <div class="mb">${body}</div></article>`;
+}
+
+/* ---------- mail reader ---------- */
+function openItem(k){
+  const it = S.inbox.find(x=>keyOf(x)===k); if(!it) return;
+  S.sel = k; it.read = true; save(); renderNav(); renderMain();
+  const r = $("#reader"), t = TK[it.id];
+  r.innerHTML = `<button class="back" id="back">← Back</button>` +
+    (it.kind==="ticket" ? notifView(t, it) : it.kind==="inject" ? injectView(t, it) : it.kind==="mail" ? mailView(t, it) : it.kind==="alert" ? alertView(t, it) : summaryView(+it.id, it));
+  r.scrollTop = 0;
+  $("#app").classList.add("reading");
+  $("#back").onclick = ()=>$("#app").classList.remove("reading");
+  r.querySelectorAll("[data-rec]").forEach(a=>a.onclick=e=>{ e.preventDefault(); openRecord(a.dataset.rec); });
+}
+
+function callerHtml(t){
+  const a = addrOf(t.from);
+  return `${esc(nameOf(t.from))}${roleOf(t.from)?`, ${esc(roleOf(t.from))}`:''}${a?` <span class="muted">&lt;${dm(esc(a))}&gt;</span>`:''}${isExternal(t.from)?' <span class="tag ext">External</span>':''}`;
+}
+
+function notifView(t, it){
+  const ty = typeOf(t);
+  const body = `<p>A new ${TYPES[ty][0].toLowerCase()} has been assigned to <b>${GROUP}</b>.</p>
+    <table class="kv"><tr><td>Number</td><td><b>${recNo(t)}</b></td></tr><tr><td>Caller</td><td>${callerHtml(t)}</td></tr>
+    <tr><td>Priority</td><td>${PRI[t.pri][2]}</td></tr><tr><td>Category</td><td>${esc(t.cat||"")} / ${esc(t.sub||"")}</td></tr>
+    <tr><td>Short description</td><td>${esc(t.subj)}</td></tr></table>
+    <div class="quote"><div class="muted" style="font-size:12px">Original ${contactType(t)==="Phone"?"call notes":"message"} from ${esc(nameOf(t.from))}</div>${dm(t.body)}</div>
+    <p><a href="#" class="btn primary" id="openrec" data-rec="${t.id}">Open ${recNo(t)}</a></p>`;
+  return `<h2 class="rsubj">${recNo(t)} assigned to your group: ${esc(t.subj)}</h2>
+    <div class="rchips"><span class="tag ${t.pri}">${PRI[t.pri][2]}</span><span class="tag ${stateCls(stateOf(t))}">${stateOf(t)}</span>${verdictChip(t.id)}</div>
+    ${msgBlock("Service Desk", "", meAddr(), clock(it.t), body)}`;
+}
+
+function injectView(x, it){
+  return `<h2 class="rsubj">${esc(x.subj)}</h2>
+    <div class="rchips">${x.tag?`<span class="tag ${x.tag}">${TAGTXT[x.tag]}</span>`:''}<span class="tag inj">⚡ Inject</span><span>A surprise event. Some injects are threats.</span></div>
+    ${isExternal(x.from) ? `<div class="extwarn">⚠ External sender (<b>${esc(addrOf(x.from).split("@")[1])}</b>). Be careful with links and requests.</div>` : ""}
+    ${msgBlock(x.from, addrOf(x.from), meAddr(), clock(it.t), dm(x.body))}
+    <div class="box"><h3>Incident raised</h3>The service desk opened <b>${recNo(x)}</b> for this event. Open it, assign it to yourself and decide the response.
+      <p style="margin-bottom:0"><a href="#" class="btn primary" id="openrec" data-rec="${x.id}">Open ${recNo(x)}</a></p></div>
+    <div class="box"><h3>Investigate in your tenant</h3>${dm(x.verify)}</div>
+    ${x.why ? `<div class="box why"><h3>Why it matters</h3>${dm(x.why)}</div>` : ""}${learnBox(x.learn)}`;
+}
+
+function mailView(t, it){
+  const m = t.evidence.mail;
+  const tip = { real:"A real tenant can send this (often only once it's set up).", sim:"Audit-log evidence only. Real tenants don't email this; it's shown as mail so you notice it." }[m.tag];
+  return `<h2 class="rsubj">${esc(m.subj)}</h2>
+    <div class="rchips"><span class="tag ${m.tag}">${TAGTXT[m.tag]}</span><span>${tip}</span></div>
+    ${msgBlock(m.from, "", meAddr(), clock(it.t), dm(m.body))}
+    <div class="box"><h3>Find it in your tenant</h3>${dm(t.verify)}</div>
+    ${m.why ? `<div class="box why"><h3>Why it matters</h3>${dm(m.why)}</div>` : ""}
+    <div class="box"><h3>Related record</h3><a href="#" data-rec="${t.id}">${recNo(t)}: ${esc(t.subj)}</a></div>${learnBox(t.learn)}`;
+}
+
+function alertView(t, it){
+  return `<h2 class="rsubj">${esc(t.consequence.toast)}</h2>
+    <div class="rchips"><span class="tag bad">Alert</span><span class="tag sim">AUDIT-ONLY</span><span>Built from audit-log events. Many teams forward these to a SIEM that raises alerts like this.</span></div>
+    ${msgBlock("Security alerts", "", meAddr(), clock(it.t), alertBody(t))}
+    <div class="box"><h3>Related record</h3><a href="#" data-rec="${t.id}">${recNo(t)}: ${esc(t.subj)}</a></div>`;
+}
+
+function summaryView(day, it){
+  const d = DAYS[day], ts = d.tickets.concat((d.injects||[]).filter(x=>S.closed[x.id]));
+  const scored = ts.filter(t=>S.closed[t.id] && S.closed[t.id].ok!==null);
+  const good = scored.filter(t=>S.closed[t.id].ok).length;
+  const wrong = scored.filter(t=>!S.closed[t.id].ok);
+  const next = day+1 < DAYS.length ? `<p>Next shift: <b>${esc(DAYS[day+1].title)}</b>. Pick it under <i>Lab day</i>.</p>` : `<p>That was the last day. Well done.</p>`;
+  const body = `<p><b>${good} of ${scored.length}</b> scored records handled correctly${ts.length>scored.length?` (${ts.length-scored.length} optional skipped)`:''}.</p>
+    ${wrong.length ? `<p>Review these:</p><ul>${wrong.map(t=>{ const k = choicesFor(t).findIndex(o=>o[1]===1);
+      return `<li><a href="#" data-rec="${t.id}">${recNo(t)}: ${esc(t.subj)}</a><br><span class="muted">Right outcome: ${outcome(t,k).act}. ${choicesFor(t)[k][0]}</span></li>`; }).join("")}</ul>`
+      : `<p>No mistakes. Every legitimate request fulfilled, every trap refused.</p>`}${next}`;
+  return `<h2 class="rsubj">${esc(d.title)}: results</h2>${msgBlock("Lab coach", "", meAddr(), clock(it.t), body)}`;
+}
+
+/* ---------- service desk record ---------- */
+function openRecord(id){
+  if(!TK[id] || !S.arrived[id]) return;
+  S.rec = id; pick = null;
+  if(!isDesk(S.folder)) S.folder = "q_all";
+  save(); renderAll(); $("#list").scrollTop = 0;
+  $("#app").classList.remove("reading");
+}
+
+const field = (label, val, cls) => `<div class="fld ${cls||''}"><label>${label}</label><div class="fv ${cls&&cls.includes('wide')&&cls.includes('rich')?'rich':''}">${val||'&nbsp;'}</div></div>`;
+
+function slaBar(t){
+  const pr = PRI[t.pri], start = S.arrived[t.id], due = start + pr[3]*3600e3, c = S.closed[t.id], end = c ? c.t : Date.now();
+  const pct = Math.min(100, Math.round((end-start)/(due-start)*100));
+  const st = c ? (end <= due ? "Achieved" : "Breached") : pct >= 100 ? "Breached" : "In progress";
+  const col = st==="Breached" ? "--phish" : pct < 50 ? "--ok" : pct < 75 ? "--warn" : "--phish";
+  return `<div class="sla"><span>Resolution SLA · ${pr[3]}h for ${pr[2]}</span><div class="bar"><i style="width:${Math.max(pct,2)}%;background:var(${col})"></i></div><span>${st} · due ${clock(due)}</span></div>`;
+}
+
+function recordView(t){
+  const c = S.closed[t.id], st = stateOf(t), mine = !!S.assigned[t.id], ty = typeOf(t), pr = PRI[t.pri], chs = choicesFor(t);
+  let h = `<div class="form"><div class="fbar"><button class="iconbtn" id="recback" title="Back to list" aria-label="Back to list">‹</button>
+    <div class="ftitle"><small>${TYPES[ty][0]}</small><b>${recNo(t)}</b></div>
+    <div class="fact">${!c && !mine ? '<button class="btn primary" id="assign">Assign to me</button>' : ''}${!c && mine ? '<a class="btn" href="#resolution" id="gores">Resolve…</a>' : ''}<span class="tag ${stateCls(st)}">${st}</span>${verdictChip(t.id)}</div></div>
+    <div class="fbody">${slaBar(t)}`;
+  if(isExternal(t.from)) h += `<div class="extwarn">⚠ External caller. This request came from outside your organization (<b>${esc(addrOf(t.from).split("@")[1])}</b>).</div>`;
+  h += `<div class="fgrid">${[
+    field("Number", recNo(t)), field("Caller", callerHtml(t)),
+    field("Category", esc(t.cat||"")), field("Subcategory", esc(t.sub||"")),
+    field("Configuration item", esc(t.ci||"")), field("Contact type", contactType(t)),
+    field("Impact", pr[0]), field("Urgency", pr[1]),
+    field("Priority", `<span class="tag ${t.pri}">${pr[2]}</span>`), field("State", `<span class="tag ${stateCls(st)}">${st}</span>`),
+    field("Assignment group", esc(GROUP)), field("Assigned to", mine ? ME : '<span class="muted">(empty)</span>'),
+    field("Opened", clock(S.arrived[t.id])), field("Lab day", `Day ${t.day}${t.optional ? " · optional" : ""}${t.inject ? " · ⚡ inject" : ""}`),
+    field("Short description", esc(t.subj), "wide"),
+    field("Description", dm(t.body), "wide rich")
+  ].join("")}</div>`;
+
+  /* related list: tasks */
+  h += `<section class="sec"><h3><span>${TYPES[ty][2]} (${t.tasks.length})</span><span>${t.tasks.filter((_,i)=>S.checks[t.id]&&S.checks[t.id][i]).length} closed</span></h3>`;
+  if(t.tasks.length){
+    if(!mine && !c) h += `<div class="notice">Assign the record to yourself to start working its tasks.</div>`;
+    h += `<table class="tasks">${t.tasks.map((x,i)=>{
+      const on = S.checks[t.id] && S.checks[t.id][i];
+      return `<tr class="${on?'done':''}"><td class="cb"><input type="checkbox" data-i="${i}" aria-label="Close ${taskNo(t,i)}" ${on?'checked':''} ${c||!mine?'disabled':''}></td>
+        <td class="tn">${taskNo(t,i)}</td><td class="tx">${dm(x)}</td><td class="ts"><span class="tag ${on?'good':'open'}">${on?'Closed Complete':'Open'}</span></td></tr>`;
+    }).join("")}</table>`;
+  } else {
+    h += `<div class="in muted">${t.inject ? "This incident was raised by an event. Investigate it in your tenant, then choose the response." : "No tasks were generated for this record. Decide whether it should be actioned at all."}</div>`;
+  }
+  h += `</section>`;
+
+  /* knowledge */
+  h += `<section class="sec"><h3>Knowledge</h3><div class="in">
+    ${t.why ? `<p style="margin:0 0 10px"><b>Why it matters:</b> ${dm(t.why)}</p>` : ""}${t.hint ? `<details class="hint"><summary>Hint from the team's knowledge base</summary><div>${dm(t.hint)}</div></details>` : ""}
+    <p style="margin:${t.hint?'10px':'0'} 0 0"><b>${t.legit ? "Prove it in your tenant:" : "How to check:"}</b> ${dm(t.verify)}</p>
+    ${t.learn && t.learn.length ? `<p style="margin:8px 0 0"><b>Microsoft Learn:</b> ${learnLinks(t.learn)}</p>` : ""}</div></section>`;
+
+  /* resolution */
+  h += `<section class="sec" id="resolution"><h3>Resolution information</h3><div class="in">`;
+  if(!c){
+    if(!mine) h += `<div class="muted">Assign the record to yourself before you resolve it.</div>`;
+    else {
+      const ready = !t.legit || allChecked(t);
+      h += `<div class="muted" style="font-size:12.5px">${t.inject ? "Choose the response. Your close notes record what you did." : "Choose how this record ends. Your comment goes to the caller."}</div>` +
+        chs.map((o,k)=>{
+          const locked = t.legit && o[1]===1 && !ready, oc = outcome(t,k);
+          return `<button class="opt ${pick&&pick.id===t.id&&pick.k===k?'picked':''}" data-k="${k}" ${locked?'disabled':''}>
+            <span><span class="tag open">${oc.act}</span></span><span class="q">${t.inject ? "Close notes" : "Comment to caller"}: “${o[0]}”</span></button>`;
+        }).join("") + (t.legit && !ready ? `<div class="need">Fulfilling is locked until every task is Closed Complete.</div>` : "");
+      if(pick && pick.id === t.id){
+        const oc = outcome(t, pick.k);
+        h += `<div class="preview"><table class="kv"><tr><td>State</td><td>In Progress → <b>${oc.state}</b></td></tr><tr><td>Close code</td><td>${oc.code}</td></tr>
+          <tr><td>${t.inject ? "Close notes" : "Additional comments<br>(customer visible)"}</td><td>${chs[pick.k][0]}</td></tr></table>
+          <div class="ca"><button class="btn primary" id="send">Submit</button><button class="btn" id="discard">Cancel</button></div></div>`;
+      }
+    }
+  } else {
+    const oc = outcome(t, c.k), best = chs.find(o=>o[1]===1), bk = chs.indexOf(best);
+    h += `<table class="kv"><tr><td>State</td><td><span class="tag ${stateCls(oc.state)}">${oc.state}</span></td></tr><tr><td>Close code</td><td>${oc.code}</td></tr>
+      <tr><td>Closed by</td><td>${ME} at ${clock(c.t)}</td></tr><tr><td>Close notes</td><td>${chs[c.k][0]}</td></tr></table>`;
+    const cls = c.ok===true ? "good" : c.ok===false ? "bad" : "";
+    h += `<div class="box coach ${cls}"><h3>Coach's review</h3>
+      <div class="verdict">${c.ok===true ? "✓ Right call" : c.ok===false ? "✗ Not the right call" : "Skipped"}</div>
+      <div>${chs[c.k][2]}</div>
+      ${c.ok===false ? `<p style="margin-bottom:0"><b>Right outcome:</b> ${outcome(t,bk).act}. “${best[0]}”</p>` : ""}
+      ${c.ok===true && t.evidence ? `<p style="margin-bottom:0" class="muted">Notifications and audit evidence for this record are in your inbox and the Audit log.</p>` : ""}
+      ${c.ok===false && t.consequence ? `<p style="margin-bottom:0;color:var(--phish)">Open the Security alert in your inbox and the red rows in the Audit log: that's what this decision caused.</p>` : ""}</div>`;
+  }
+  h += `</div></section>`;
+
+  /* activity */
+  const acts = (S.log[t.id]||[]).slice().reverse();
+  const LBL = { sys:"Field changes", note:"Work notes", comment:"Additional comments (customer visible)", caller:"Additional comments (customer visible)" };
+  h += `<section class="sec"><h3><span>Activity</span><span>${acts.length}</span></h3><div class="in">
+    <div class="wn"><textarea id="wn" placeholder="Work notes (internal): what you checked, what you found"></textarea><button class="btn" id="wnpost">Post</button></div>
+    ${acts.map(a=>`<div class="act ${a.kind}"><div class="ah"><b>${esc(a.who)}</b> · ${LBL[a.kind]} · ${clock(a.t)}</div><div>${esc(a.text)}</div></div>`).join("")}</div></section>`;
+  return h + `</div></div>`;
+}
+
+function wireRecord(t){
+  const L = $("#list"), rerender = ()=>{ const y = L.scrollTop; renderAll(); L.scrollTop = y; };
+  $("#recback").onclick = ()=>{ S.rec = null; pick = null; save(); renderAll(); };
+  if($("#assign")) $("#assign").onclick = ()=>assign(t.id);
+  if($("#gores")) $("#gores").onclick = e=>{ e.preventDefault(); $("#resolution").scrollIntoView && $("#resolution").scrollIntoView({behavior:"smooth"}); };
+  L.querySelectorAll("table.tasks input").forEach(cb=>cb.onchange=()=>{ setTask(t, +cb.dataset.i, cb.checked); rerender(); });
+  L.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ pick = { id:t.id, k:+b.dataset.k }; rerender(); });
+  if($("#send")) $("#send").onclick = ()=>{ if(close(t.id, pick.k)) L.scrollTop = 0; };
+  if($("#discard")) $("#discard").onclick = ()=>{ pick = null; rerender(); };
+  $("#wnpost").onclick = ()=>{ const v = $("#wn").value.trim(); if(!v) return; log(t.id, ME, "note", v); save(); rerender(); };
+}
+
+function toast(title, msg, alert){
+  const el = document.createElement("div"); el.className = "toast" + (alert ? " alert" : "");
+  el.innerHTML = `<b>${title}</b>${msg}`; $("#toasts").prepend(el);
+  [...$("#toasts").children].filter(x=>!x.classList.contains("keep")).slice(2).forEach(x=>x.remove());
+  setTimeout(()=>el.remove(), 4500);
+}
+
+/* ================= WIRING ================= */
+$("#next").onclick = ()=>{
+  const t = deliverNext(true); if(!t) return;
+  if(S.folder !== "inbox"){ S.folder = "inbox"; S.rec = null; renderAll(); }
+  openItem("ticket:" + t.id);
+};
+$("#q").oninput = ()=>{ query = $("#q").value.trim(); renderMain(); };
+$("#auto").onchange = ()=>{ S.auto = $("#auto").checked; save(); };
+$("#domSave").onclick = ()=>{
+  const v = $("#dom").value.trim().toLowerCase();
+  if(!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(v)){ toast("That doesn't look like a domain","Example: contoso123.onmicrosoft.com", true); return; }
+  S.dom = v; save(); renderAll(); if(S.sel && !isDesk(S.folder)) openItem(S.sel); toast("Domain saved", esc(v));
+};
+$("#dom").onkeydown = e=>{ if(e.key==="Enter") $("#domSave").click(); };
+let resetArmed = null;
+$("#reset").onclick = ()=>{
+  if(!resetArmed){ $("#reset").textContent = "Click again to confirm"; resetArmed = setTimeout(()=>{ resetArmed=null; $("#reset").textContent="Reset everything"; }, 3000); return; }
+  clearTimeout(resetArmed); resetArmed = null; $("#reset").textContent = "Reset everything";
+  const dom = S.dom; S = fresh(); S.dom = dom; pick = null; save(); renderAll(); showEmptyReader();
+};
+function showEmptyReader(){
+  $("#reader").innerHTML = `<div class="empty">Select a message to read it.<br><br>New here? Click <b>Get next ticket</b>. The service desk emails you about each new record. Open the record, assign it to yourself, work its tasks in your lab tenant, then resolve it. Some requests should be refused.</div>`;
+}
+renderAll();
+if(!isDesk(S.folder) && S.sel && S.inbox.some(x=>keyOf(x)===S.sel)) openItem(S.sel); else showEmptyReader();
+$("#app").classList.remove("reading");
+</script>
+</body>
+</html>

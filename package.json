@@ -1,0 +1,12 @@
+{
+  "name": "sc300-lab-inbox",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A service-desk simulator for practising Microsoft Entra ID (SC-300) identity and access administration.",
+  "scripts": {
+    "test": "node test/smoke.js"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.1"
+  }
+}

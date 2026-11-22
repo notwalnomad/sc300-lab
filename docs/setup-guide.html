@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SC-300 Setup Guide</title>
+<style>
+:root{
+  --bg:#0f1115;--panel:#161a21;--panel2:#1c212a;--line:#2a313c;--text:#e6e9ef;--muted:#9aa4b2;
+  --accent:#6ea8fe;--real:#3fb950;--sim:#a78bfa;--phish:#f85149;--warn:#d29922;--ok:#3fb950;
+  --banner-bg:#2d1f05;--banner-text:#f0c674;--banner-line:#4a3410;--code-bg:#0b0d11;--good-bg:#0f2a17;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+code,.dom{background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:0 4px;font:12.5px ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+button{font:inherit;cursor:pointer;color:inherit}
+.banner{background:var(--banner-bg);color:var(--banner-text);text-align:center;font-size:12px;padding:4px 8px;border-bottom:1px solid var(--banner-line)}
+
+/* layout */
+.top{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line)}
+.topin{max-width:1100px;margin:0 auto;padding:10px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.brand{font-weight:700;font-size:16px;white-space:nowrap}
+.brand small{color:var(--muted);font-weight:400;margin-left:6px}
+.domf{display:flex;gap:6px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.domf label{font-size:12px;color:var(--muted)}
+.domf input{width:260px;max-width:60vw;background:var(--code-bg);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:5px 8px;font:13px ui-monospace,Consolas,monospace}
+.overall{font-size:12px;color:var(--muted);white-space:nowrap}
+.overall b{color:var(--ok)}
+.tabs{max-width:1100px;margin:0 auto;padding:0 20px;display:flex;gap:2px;overflow-x:auto}
+.tabs a{padding:8px 12px;font-size:13px;color:var(--muted);text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs a:hover{color:var(--text)}
+.tabs a.on{color:var(--text);border-bottom-color:var(--accent)}
+.wrap{max-width:1100px;margin:0 auto;padding:22px 20px 80px}
+h1{margin:0 0 6px;font-size:25px}
+.lead{color:var(--muted);margin:0 0 20px;max-width:760px}
+h2{font-size:19px;margin:38px 0 6px;scroll-margin-top:110px}
+h2 + .intro{color:var(--muted);margin:0 0 14px;max-width:780px}
+h3{font-size:14.5px;margin:18px 0 8px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+.card h3{margin-top:0}
+.card > :last-child{margin-bottom:0}
+ul,ol{padding-left:20px;margin:6px 0}
+li{margin:4px 0}
+.muted{color:var(--muted)}
+
+/* callouts */
+.note{border-left:3px solid var(--sim);background:var(--panel);padding:9px 13px;border-radius:6px;margin:10px 0;font-size:14px}
+.note b:first-child{display:inline}
+.note.why{border-left-color:var(--sim)}
+.note.good{border-left-color:var(--ok)}
+.note.warn{border-left-color:var(--warn)}
+.note.bad{border-left-color:var(--phish)}
+
+/* day panels */
+.day{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:16px 0;scroll-margin-top:110px;overflow:hidden}
+.dayh{display:flex;gap:12px;align-items:center;padding:13px 16px;background:var(--panel2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dayh h2{margin:0;font-size:17px}
+.dayh .goal{color:var(--muted);font-size:13px;flex-basis:100%}
+.prog{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.bar{width:120px;height:6px;background:var(--bg);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);width:0}
+.dayb{padding:6px 16px 16px}
+
+/* steps */
+.step{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.step:last-of-type{border-bottom:0}
+.step input{margin-top:5px;flex:none;width:17px;height:17px;accent-color:var(--ok)}
+.step .sb{flex:1;min-width:0}
+.step .st{font-weight:600}
+.step.done .st{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.step .path{font-size:13.5px;margin:3px 0}
+.step .path b{color:var(--text)}
+.step .why{font-size:13px;color:var(--muted);margin-top:4px}
+.step .why::before{content:"Why: ";color:var(--sim);font-weight:600}
+.step .see{font-size:13px;color:var(--muted);margin-top:3px}
+.step .see::before{content:"You should see: ";color:var(--ok);font-weight:600}
+.tag{display:inline-block;font-size:10.5px;font-weight:600;padding:0 7px;border-radius:999px;border:1px solid;white-space:nowrap;line-height:1.6;vertical-align:1px}
+.t-opt{color:var(--muted);border-color:var(--muted)} .t-paid{color:var(--warn);border-color:var(--warn)}
+.t-do{color:var(--ok);border-color:var(--ok)} .t-no{color:var(--phish);border-color:var(--phish)} .t-inj{color:var(--warn);border-color:var(--warn);border-style:dashed}
+
+/* self-check */
+.quiz{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.quiz .qh{padding:8px 13px;background:var(--panel2);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.quiz details{border-top:1px solid var(--line);padding:9px 13px}
+.quiz details:first-of-type{border-top:0}
+.quiz summary{cursor:pointer;font-weight:600;font-size:14px}
+.quiz summary::marker{color:var(--accent)}
+.quiz details[open] summary{margin-bottom:6px}
+.quiz .ans{font-size:14px;color:var(--text);background:var(--good-bg);border-radius:6px;padding:8px 11px}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--panel2);color:var(--muted);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+details.recs{margin-top:12px}
+details.recs > summary{cursor:pointer;color:var(--muted);font-size:13px}
+
+/* glossary tooltips */
+.term{border-bottom:1px dotted var(--accent);cursor:help;position:relative;outline:none}
+.term:hover::after,.term:focus::after{content:attr(data-tip);position:absolute;left:0;top:1.7em;z-index:30;width:min(300px,75vw);background:var(--code-bg);color:var(--text);border:1px solid var(--accent);border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.45;font-weight:400;text-decoration:none}
+dl.gloss{display:grid;grid-template-columns:minmax(150px,220px) 1fr;gap:0;margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+dl.gloss dt,dl.gloss dd{margin:0;padding:8px 12px;border-bottom:1px solid var(--line)}
+dl.gloss dt{font-weight:600;background:var(--panel)}
+dl.gloss dd{background:var(--panel2);font-size:14px}
+.reset{background:none;border:1px solid var(--line);border-radius:6px;padding:3px 10px;color:var(--muted);font-size:12px}
+@media (max-width:640px){h2,.day{scroll-margin-top:175px}.wrap{padding:16px 16px 60px}.topin,.tabs{padding-left:16px;padding-right:16px}.domf{margin-left:0;width:100%}.domf input{flex:1;width:auto}dl.gloss{grid-template-columns:1fr}dl.gloss dt{border-bottom:0}.prog{margin-left:0}h1{font-size:21px}}
+@media print{.top{position:static}.tabs,.domf,.reset{display:none}.term::after{display:none}.quiz details{display:block}}
+</style>
+</head>
+<body>
+<div class="banner">Study companion for the SC-300 Lab Inbox. Only change things in a lab tenant you own. Never share passwords or MFA codes.</div>
+
+<div class="top">
+  <div class="topin">
+    <div class="brand">SC-300 Setup Guide <small>how-to + explanations</small></div>
+    <span class="overall">Progress <b id="pAll">0</b>/<span id="pTot">0</span> steps</span>
+    <div class="domf">
+      <label for="dom">Your tenant domain</label>
+      <input id="dom" spellcheck="false" autocomplete="off" placeholder="mypractice.onmicrosoft.com">
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <a href="#start">Start here</a><a href="#d0">Day 0</a><a href="#d1">Day 1</a><a href="#d2">Day 2</a><a href="#d3">Day 3</a><a href="#d4">Day 4</a><a href="#evidence">Evidence</a><a href="#errors">Troubleshooting</a><a href="#glossary">Glossary</a><a href="#cleanup">Cleanup</a>
+  </nav>
+</div>
+
+<div class="wrap">
+<h1>Set up your Microsoft lab, one step at a time</h1>
+<p class="lead">This guide walks through every Microsoft setup step for the bootcamp: what to click, what you should see, and why it matters. Type your tenant domain at the top and every username updates. Tick steps as you finish them. Your ticks are saved in this browser. Hover or tap a <span class="term" tabindex="0" data-tip="Like this. Dotted words have a plain-English definition. All of them are also listed in the Glossary at the bottom.">dotted word</span> for a definition.</p>
+
+<!-- ============================ START ============================ -->
+<h2 id="start">Start here</h2>
+<p class="intro">Five minutes of orientation before Day 0. Read this once.</p>
+<div class="grid">
+  <div class="card"><h3>What you're building</h3>
+    <p>A small pretend company inside your own Microsoft <span class="term" tabindex="0" data-tip="Your organization's identity directory in Microsoft Entra: all its users, groups, apps and settings. It has a primary domain like name.onmicrosoft.com and a Tenant ID.">tenant</span>: a couple of admin accounts, a few users and groups, a guest, some apps and some security policies. Then you prove each change happened by finding it in the logs.</p></div>
+  <div class="card"><h3>Three websites</h3>
+    <ul>
+      <li><b>Azure portal</b> (<code>portal.azure.com</code>): money and machines. Subscriptions, resource groups, budgets, VMs.</li>
+      <li><b>Entra admin center</b> (<code>entra.microsoft.com</code>): identity. Users, roles, MFA, Conditional Access, apps, logs.</li>
+      <li><b>Microsoft 365 admin center</b> (<code>admin.microsoft.com</code>): licenses and trials.</li>
+    </ul>
+    <p class="muted">Type these addresses yourself rather than clicking links in emails.</p></div>
+  <div class="card"><h3>Browser habits</h3>
+    <ul>
+      <li>One browser <b>profile</b> per account (your admin, Lab-Admin, Lab-Helpdesk, lab.user1). Private windows work too.</li>
+      <li>Test sign-ins and MFA in a <b>fresh</b> private window, or you'll see results from an old session.</li>
+    </ul></div>
+  <div class="card"><h3>How each day works</h3>
+    <ol>
+      <li>Read the day's <b>goal</b>.</li>
+      <li>Do each step in your tenant, check <i>You should see</i>, then tick it.</li>
+      <li>Answer the <b>Check yourself</b> questions before peeking.</li>
+      <li>Work the matching records in the Lab Inbox simulator.</li>
+    </ol></div>
+</div>
+<div class="note why"><b>Why this course keeps saying "prove it":</b> in a real job, "I set it up" isn't enough. Auditors and incident responders want evidence: an audit event, a sign-in record, a request ID. Each step below says where that evidence lives.</div>
+
+<!-- ============================ DAY 0 ============================ -->
+<section class="day" id="d0" data-day="0">
+  <div class="dayh"><h2>Day 0: Prerequisites</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+    <div class="goal">Goal: find your tenant, create two lab accounts, give one a role and the other a license, and put a spending safety net in place. No VMs today.</div></div>
+  <div class="dayb">
+    <label class="step"><input type="checkbox" data-k="d0-1"><div class="sb">
+      <div class="st">Find your tenant (don't create a new one)</div>
+      <div class="path">Azure portal → search <b>Microsoft Entra ID</b> → <b>Overview</b></div>
+      <div class="see">a Name (often "Default Directory"), a Primary domain like <code>mypractice.onmicrosoft.com</code>, and a long Tenant ID. Copy the domain into the box at the top of this page.</div>
+      <div class="why">Signing up for Azure usually creates a tenant for you. Making a second one splits your work across two directories and causes confusing "user not found" errors later.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d0-2"><div class="sb">
+      <div class="st">Create the admin account</div>
+      <div class="path">Entra admin center → <b>Entra ID → Users → All users → New user → Create new user</b>. UPN <span class="dom" data-u="sc300-lab-admin"></span>, display name SC300-Lab-Admin.</div>
+      <div class="see">the new user in All users. Note the temporary password somewhere safe, not in this page.</div>
+      <div class="why">Admins work from a <span class="term" tabindex="0" data-tip="A second account used only for admin work. If someone phishes your everyday account, they don't get admin rights with it.">separate admin account</span>, so a phished everyday account doesn't hand over admin rights.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d0-3"><div class="sb">
+      <div class="st">Give it Privileged Role Administrator (active)</div>
+      <div class="path"><b>Roles &amp; admins → Privileged Role Administrator → Add assignments</b> → SC300-Lab-Admin. If asked, choose assignment type <b>Active</b>.</div>
+      <div class="see">SC300-Lab-Admin listed under the role's Assignments.</div>
+      <div class="why">This role can assign <i>any</i> role, including Global Administrator. It's active for now so you can feel the risk. Day 4 makes it <span class="term" tabindex="0" data-tip="Eligible: the user holds no rights until they activate the role for a few hours, usually with MFA, a reason and sometimes approval. Also called just-in-time access.">eligible</span>.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d0-4"><div class="sb">
+      <div class="st">Create the helpdesk account (no roles)</div>
+      <div class="path">New user → UPN <span class="dom" data-u="sc300-lab-helpdesk"></span>. Then <b>Edit properties → Settings → Usage location</b> (pick your country).</div>
+      <div class="see">the user with Usage location filled in, and <b>Assigned roles</b> empty.</div>
+      <div class="why">A license can't be assigned until usage location is set, because license availability depends on country. Helpdesk stays role-free until Day 1 gives it a properly limited role.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d0-5"><div class="sb">
+      <div class="st">Assign one Microsoft Entra ID P2 license to helpdesk</div>
+      <div class="path">Microsoft 365 admin center → <b>Billing → Licenses</b> → Microsoft Entra ID P2 → Assign → SC300-Lab-Helpdesk. (Start the free P2 trial first if you have none.)</div>
+      <div class="see">back in Entra, Users → SC300-Lab-Helpdesk → <b>Licenses</b> shows Entra ID P2.</div>
+      <div class="why">A <span class="term" tabindex="0" data-tip="A license unlocks features for a user, such as PIM or risk-based Conditional Access. It never lets the user change the tenant.">license</span> unlocks features <i>for</i> the user. A <span class="term" tabindex="0" data-tip="A role is a set of admin permissions, such as resetting passwords or managing apps. Roles are what let someone change the tenant.">role</span> lets the user change the tenant. They're different things. Licenses moved out of the Entra admin center, which is why this step is in the Microsoft 365 admin center.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d0-6"><div class="sb">
+      <div class="st">Check you have a subscription, then create the resource group</div>
+      <div class="path">Azure portal → <b>Subscriptions</b> (at least one, Active) → <b>Resource groups → Create</b>: name <code>rg-sc300-lab</code>, region <b>East US 2</b> (if offered) → Review + create → Create.</div>
+      <div class="see"><code>rg-sc300-lab</code> in the list, with nothing inside it.</div>
+      <div class="why">A <span class="term" tabindex="0" data-tip="Where Azure charges are billed. Everything you build lives inside a subscription.">subscription</span> is where charges live. A <span class="term" tabindex="0" data-tip="A named folder for Azure resources. An empty one costs nothing. Deleting it deletes everything inside it.">resource group</span> is just a labelled folder. An empty one costs nothing.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d0-7"><div class="sb">
+      <div class="st">Create a monthly budget with alerts</div>
+      <div class="path"><b>Subscriptions → your subscription → Cost Management → Budgets → Add</b>. Monthly, an amount you're comfortable with, alerts on <b>Actual</b> cost at 50%, 80% and 100% to an email you read.</div>
+      <div class="see">budget listed with three alert conditions.</div>
+      <div class="why">Day 1's hybrid lab uses paid VMs. Budgets <b>warn</b> you. They never stop charges, and the email can arrive hours late.</div>
+    </div></label>
+    <div class="note good"><b>Day 0 finish line:</b> you can point to your primary domain, both lab users, Lab-Admin's role, Helpdesk's P2 license, an empty <code>rg-sc300-lab</code>, and the budget.</div>
+    <div class="quiz"><div class="qh">Check yourself</div>
+      <details><summary>Helpdesk has an Entra ID P2 license. Can it reset passwords yet?</summary><div class="ans">No. A license unlocks features but grants no permissions. Resetting passwords needs a role (Helpdesk Administrator), which comes on Day 1.</div></details>
+      <details><summary>You created an empty resource group. Are you being charged?</summary><div class="ans">No. Resource groups are free containers. Charges start when you create billable resources inside them, such as VMs.</div></details>
+      <details><summary>Your budget alert at 100% fires. Does Azure stop the spending?</summary><div class="ans">No. Budgets only send alerts. You have to stop (deallocate) or delete the resources yourself.</div></details>
+    </div>
+    <details class="recs"><summary>Matching Lab Inbox records</summary><div class="tw"><table>
+      <tr><td>RITM0010001</td><td><span class="tag t-do">DO</span></td><td>Admin account + active Privileged Role Administrator</td></tr>
+      <tr><td>RITM0010002</td><td><span class="tag t-do">DO</span></td><td>Helpdesk account, usage location, P2, no roles</td></tr>
+      <tr><td>RITM0010003</td><td><span class="tag t-no">REFUSE</span></td><td>Helpdesk asks for Global Administrator</td></tr>
+      <tr><td>RITM0010004</td><td><span class="tag t-do">DO</span></td><td>Resource group + budget</td></tr>
+      <tr><td>INC0010005</td><td><span class="tag t-no">REFUSE</span></td><td>Fake "subscription suspended" email</td></tr>
+      <tr><td>INC0010501</td><td><span class="tag t-inj">⚡ INJECT</span></td><td>100% budget alert from a GPU VM you didn't build</td></tr>
+    </table></div></details>
+  </div>
+</section>
+
+<!-- ============================ DAY 1 ============================ -->
+<section class="day" id="d1" data-day="1">
+  <div class="dayh"><h2>Day 1: Roles, users, groups, guests, hybrid</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+    <div class="goal">Goal: understand who an identity is, what access it has, and where it comes from.</div></div>
+  <div class="dayb">
+    <div class="note why"><b>The big idea:</b> role = <i>what</i> an admin can do. <span class="term" tabindex="0" data-tip="Where a role applies: the whole directory, or only the users and groups inside an administrative unit.">Scope</span> = <i>where</i> they can do it. Most admin mistakes are the right role at the wrong scope.</div>
+    <h3>Lab 1: Scoped admin role</h3>
+    <label class="step"><input type="checkbox" data-k="d1-1"><div class="sb">
+      <div class="st">Create an administrative unit</div>
+      <div class="path">Entra → <b>Roles &amp; admins → Admin units → Add</b>: name <code>AU-Lab</code>.</div>
+      <div class="why">An <span class="term" tabindex="0" data-tip="A container for users, groups or devices. A role assigned scoped to an administrative unit only works on what's inside it.">administrative unit</span> is a fence. Roles scoped to it only work inside it.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d1-2"><div class="sb">
+      <div class="st">Scope Helpdesk Administrator to AU-Lab</div>
+      <div class="path"><b>AU-Lab → Roles and administrators → Helpdesk Administrator → Add assignments</b> → SC300-Lab-Helpdesk.</div>
+      <div class="see">checking from <b>both sides</b>: AU-Lab's role list shows Helpdesk, and Users → SC300-Lab-Helpdesk → Assigned roles shows scope <b>AU-Lab</b>, not "Directory".</div>
+    </div></label>
+    <h3>Lab 2: Users and groups</h3>
+    <label class="step"><input type="checkbox" data-k="d1-3"><div class="sb">
+      <div class="st">Create a lab user and a group</div>
+      <div class="path">New user <span class="dom" data-u="lab.user1"></span>. <b>Groups → New group</b>: Security, Assigned membership. Add lab.user1 as a <b>member</b>. Add lab.user1 to AU-Lab too.</div>
+      <div class="why">Membership isn't ownership, and neither one makes anyone an admin. (The exception is a <span class="term" tabindex="0" data-tip="A group created with 'Microsoft Entra roles can be assigned to the group' turned on. Its members get the roles assigned to the group.">role-assignable group</span>.)</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d1-4"><div class="sb">
+      <div class="st">Disable, then re-enable, only lab.user1</div>
+      <div class="path">Users → lab.user1 → <b>Edit properties → Settings → Account enabled</b> off → Save. Then on again.</div>
+      <div class="see">two <code>Update user</code> events in Audit logs. Open one: <b>Modified properties</b> shows AccountEnabled changing.</div>
+    </div></label>
+    <h3>Lab 3: External identities</h3>
+    <label class="step"><input type="checkbox" data-k="d1-5"><div class="sb">
+      <div class="st">Invite a guest you control</div>
+      <div class="path">Users → <b>New user → Invite external user</b> → a <b>different</b> personal mailbox you own.</div>
+      <div class="why">You need to receive the invite to redeem it, so never invite someone else's address for a lab.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d1-6"><div class="sb">
+      <div class="st">Redeem it in a separate session and check it</div>
+      <div class="path">Open the invite email in a private window → accept. Then Users → the guest → Properties.</div>
+      <div class="see"><b>User type = Guest</b>, invitation accepted, <b>Assigned roles</b> empty.</div>
+      <div class="why">Guests sometimes end up with privileged access through forgotten group memberships. Check every time.</div>
+    </div></label>
+    <h3>Lab 4: Hybrid identity <span class="tag t-paid">PAID</span> <span class="tag t-opt">ADVANCED</span></h3>
+    <div class="note warn">This lab uses Azure VMs and is long (the course walkthrough is over a hundred steps). Have the Day 0 budget in place first, and plan more than one session.</div>
+    <label class="step"><input type="checkbox" data-k="d1-7"><div class="sb">
+      <div class="st">Build a private AD DS domain</div>
+      <div class="path">A small Windows Server VM in <code>rg-sc300-lab</code>, promoted to a domain controller. Create a test user and group in an OU.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d1-8"><div class="sb">
+      <div class="st">Configure Entra Cloud Sync</div>
+      <div class="path">Entra → <b>Hybrid management → Microsoft Entra Connect → Cloud sync</b>: install the provisioning agent on the DC, create a configuration scoped to your OU, add a notification email.</div>
+      <div class="why">An on-prem AD account and its synced Entra account are related but separate. A change to one isn't instant on the other.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d1-9"><div class="sb">
+      <div class="st">Domain-join a Windows client and verify hybrid join</div>
+      <div class="path">Join a Windows client VM to the domain, then check its device record in Entra → <b>Devices</b>.</div>
+      <div class="see">five separate checks: synced user, synced group, domain-joined client, its <span class="term" tabindex="0" data-tip="A Windows device joined to on-prem AD and also registered in Entra, so cloud policies can recognise it.">Entra hybrid joined</span> device record, and a healthy device/<span class="term" tabindex="0" data-tip="Primary Refresh Token: a long-lived sign-in token a joined Windows device holds for single sign-on to Microsoft cloud apps.">PRT</span> state.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d1-10"><div class="sb">
+      <div class="st">Deallocate every VM</div>
+      <div class="path">Azure portal → each VM → <b>Stop</b>.</div>
+      <div class="see">Status <b>Stopped (deallocated)</b>.</div>
+      <div class="why">Shutting down from inside Windows still bills for compute. Only "deallocated" stops the meter.</div>
+    </div></label>
+    <div class="note bad">Don't add extra VMs or extra directory privileges just to make your screen match a screenshot.</div>
+    <div class="quiz"><div class="qh">Check yourself</div>
+      <details><summary>Helpdesk tries to reset SC300-Lab-Admin's password and fails. Is something broken?</summary><div class="ans">No, the scope is working. Helpdesk Administrator is scoped to AU-Lab, and SC300-Lab-Admin isn't in it. A failed attempt outside the fence is your proof that the fence works.</div></details>
+      <details><summary>Does owning a group make you a tenant admin?</summary><div class="ans">No. Owners manage the group's membership. Admin rights come from roles, and only a role-assignable group passes roles on to its members.</div></details>
+      <details><summary>Why is "synced user exists" not enough to pass the hybrid lab?</summary><div class="ans">User sync, group sync, domain join, hybrid device registration and PRT state are separate systems. Each can fail on its own, so each needs its own check.</div></details>
+    </div>
+    <details class="recs"><summary>Matching Lab Inbox records</summary><div class="tw"><table>
+      <tr><td>RITM0010011</td><td><span class="tag t-do">DO</span></td><td>AU-Lab + scoped Helpdesk Administrator</td></tr>
+      <tr><td>RITM0010012</td><td><span class="tag t-do">DO</span></td><td>Joiner: lab.user1 into Sales groups and AU-Lab</td></tr>
+      <tr><td>RITM0010013</td><td><span class="tag t-do">DO</span></td><td>Guest invite into GRP-Support</td></tr>
+      <tr><td>RITM0010014</td><td><span class="tag t-no">REFUSE</span></td><td>"Resend my invite to this new address"</td></tr>
+      <tr><td>RITM0010015</td><td><span class="tag t-do">DO</span></td><td>Mover: add Support, <b>remove</b> Sales</td></tr>
+      <tr><td>INC0010016</td><td><span class="tag t-do">DO</span></td><td>Incident: disable, revoke sessions, reset, re-enable</td></tr>
+      <tr><td>RITM0010017</td><td><span class="tag t-opt">OPTIONAL</span></td><td>Cloud Sync hybrid lab</td></tr>
+      <tr><td>INC0010511</td><td><span class="tag t-inj">⚡ INJECT</span></td><td>02:14 Global Admin assignment</td></tr>
+    </table></div></details>
+  </div>
+</section>
+
+<!-- ============================ DAY 2 ============================ -->
+<section class="day" id="d2" data-day="2">
+  <div class="dayh"><h2>Day 2: MFA and Conditional Access evidence</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+    <div class="goal">Goal: prove MFA happened using the sign-in logs, and test a Conditional Access policy without enforcing it.</div></div>
+  <div class="dayb">
+    <div class="note why"><b>The big idea:</b> "it prompted for MFA" and "this policy required MFA" are two different claims. Each one needs its own evidence.</div>
+    <h3>Exercise 1: Authentication methods</h3>
+    <label class="step"><input type="checkbox" data-k="d2-1"><div class="sb">
+      <div class="st">Inspect who the Authenticator policy targets</div>
+      <div class="path">Entra → <b>Protection → Authentication methods → Policies → Microsoft Authenticator</b>. Check Enable and Target (does it include lab.user1?). Look only. Don't change anything.</div>
+      <div class="why">If the user isn't targeted, they can't use the method, however many times you test. Reading a policy writes nothing to the audit log.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d2-2"><div class="sb">
+      <div class="st">Confirm lab.user1's registered method</div>
+      <div class="path">Users → lab.user1 → <b>Authentication methods</b>. If there's none, sign in as lab.user1 and register Authenticator under <b>My Sign-Ins → Security info</b>.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d2-3"><div class="sb">
+      <div class="st">Do a fresh MFA challenge, then find it in the logs</div>
+      <div class="path">New private window → sign in as lab.user1 → approve the prompt. Then <b>Sign-in logs</b> → that event → <b>Authentication details</b>.</div>
+      <div class="see">an MFA method (for example, mobile app notification) marked as succeeding in <i>this</i> event. Note the Request ID.</div>
+      <div class="why">With <span class="term" tabindex="0" data-tip="The sign-in screen shows a number and the user types it into Authenticator. Someone who didn't start the sign-in has no number to type.">number matching</span>, you type the number shown on the sign-in screen into the app.</div>
+    </div></label>
+    <div class="note warn"><b>Watch for:</b> <span class="term" tabindex="0" data-tip="The session already held an MFA claim, so no new prompt happened in this sign-in. It's evidence of an earlier MFA, not this one.">"Previously satisfied"</span> doesn't prove a new prompt happened. If you see it, use a fresh private window and sign in again.</div>
+    <h3>Exercise 2: Conditional Access in report-only</h3>
+    <label class="step"><input type="checkbox" data-k="d2-4"><div class="sb">
+      <div class="st">Create a policy for the lab user only</div>
+      <div class="path">Entra → <b>Protection → Conditional Access → Policies → New policy</b>. Users: include <b>only lab.user1</b> (exclude your emergency access account if you have one). Target resources: All resources. Grant: Require MFA.</div>
+      <div class="why">Targeting one test user means a mistake can only affect that user, not everyone.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d2-5"><div class="sb">
+      <div class="st">Set it to Report-only and save</div>
+      <div class="path"><b>Enable policy: Report-only</b> → Create.</div>
+      <div class="why"><span class="term" tabindex="0" data-tip="The policy is evaluated on every matching sign-in and the result is recorded, but nothing is blocked or prompted.">Report-only</span> records what the policy <i>would</i> do without enforcing it. You can create report-only policies while security defaults is still on.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d2-6"><div class="sb">
+      <div class="st">Test it with What If</div>
+      <div class="path">Conditional Access → <b>What If</b> → user lab.user1 → run.</div>
+      <div class="see">your policy listed under the policies that would apply.</div>
+    </div></label>
+    <h3>Exercise 3: Troubleshooting</h3>
+    <label class="step"><input type="checkbox" data-k="d2-7"><div class="sb">
+      <div class="st">Compare three views of the same sign-in</div>
+      <div class="path">Sign-in logs → lab.user1's newest event → compare the top-level <b>Status</b>, <b>Authentication details</b>, and the <b>Report-only</b> tab.</div>
+      <div class="see">the report-only result for your policy, such as <i>Report-only: Success</i>, <i>Failure</i> or <i>User action required</i>, next to what really happened.</div>
+    </div></label>
+    <div class="note bad"><b>Don't</b> switch the policy On, turn off security defaults, reset passwords or add permissions just to make a sign-in look like a screenshot.</div>
+    <div class="quiz"><div class="qh">Check yourself</div>
+      <details><summary>Point to proof that MFA happened in a specific sign-in. Where is it?</summary><div class="ans">Sign-in logs → that event → Authentication details. A row showing an MFA method succeeding in that event, not "previously satisfied".</div></details>
+      <details><summary>The Report-only tab says "Failure". Was the user blocked?</summary><div class="ans">No. Report-only never blocks. "Failure" means the user <i>would</i> have failed the grant controls if the policy were On. Check the top-level status for what really happened.</div></details>
+      <details><summary>Why exclude an emergency access account from Conditional Access?</summary><div class="ans">So a broken policy can never lock every admin out. The emergency account is the way back in.</div></details>
+    </div>
+    <details class="recs"><summary>Matching Lab Inbox records</summary><div class="tw"><table>
+      <tr><td>RITM0010021</td><td><span class="tag t-do">DO</span></td><td>Check the Authenticator policy (look only)</td></tr>
+      <tr><td>RITM0010022</td><td><span class="tag t-do">DO</span></td><td>Evidence of a fresh MFA sign-in</td></tr>
+      <tr><td>INC0010023</td><td><span class="tag t-no">REFUSE</span></td><td>"Lost my phone, remove my MFA" (verify, then Temporary Access Pass)</td></tr>
+      <tr><td>CHG0010024</td><td><span class="tag t-do">DO</span></td><td>Report-only CA pilot with break-glass excluded</td></tr>
+      <tr><td>CHG0010025</td><td><span class="tag t-no">REFUSE</span></td><td>"Turn off security defaults for a week"</td></tr>
+      <tr><td>INC0010521</td><td><span class="tag t-inj">⚡ INJECT</span></td><td>MFA fatigue prompts</td></tr>
+      <tr><td>INC0010522</td><td><span class="tag t-inj">⚡ INJECT</span></td><td>CA policy switched On for everyone</td></tr>
+    </table></div>
+    <p class="muted">The simulator's pilot targets the GRP-Support group instead of a single user. Either is fine for report-only.</p></details>
+  </div>
+</section>
+
+<!-- ============================ DAY 3 ============================ -->
+<section class="day" id="d3" data-day="3">
+  <div class="dayh"><h2>Day 3: SSO, app registrations, Microsoft Graph</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+    <div class="goal">Goal: connect an app to your tenant, then show what a delegated token can and can't do.</div></div>
+  <div class="dayb">
+    <div class="note why"><b>The big idea:</b> getting a token proves <i>who you are</i>. It doesn't decide <i>what you're allowed to do</i>. Permissions and assignments do that.</div>
+    <h3>Lab 1: SAML single sign-on</h3>
+    <label class="step"><input type="checkbox" data-k="d3-1"><div class="sb">
+      <div class="st">Add the SAML Toolkit enterprise app</div>
+      <div class="path">Entra → <b>Applications → Enterprise applications → New application</b> → search <i>Microsoft Entra SAML Toolkit</i> → Create.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d3-2"><div class="sb">
+      <div class="st">Configure SAML and check NameID</div>
+      <div class="path">App → <b>Single sign-on → SAML</b>. Enter the identity provider and service provider values from the toolkit's setup page. Check the <b>NameID</b> (Unique User Identifier) matches what the toolkit expects. Add a notification email under SAML Certificates.</div>
+      <div class="why"><span class="term" tabindex="0" data-tip="A signed XML message from Entra to an app saying who the user is. The NameID claim is the user identifier inside it.">SAML assertions</span> carry the user's identity. If the NameID doesn't match, a correctly signed-in user still can't log in.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d3-3"><div class="sb">
+      <div class="st">Assign one test user and test both ways</div>
+      <div class="path"><b>Properties → Assignment required = Yes</b>. <b>Users and groups → Add</b> → SC300-Lab-Helpdesk. Test signing in as Helpdesk, then as lab.user1.</div>
+      <div class="see">Helpdesk signs in. lab.user1 is refused with <code>AADSTS50105</code>.</div>
+      <div class="why">That error is about <b>assignment</b>, not the password. Don't reset anything.</div>
+    </div></label>
+    <h3>Lab 2: App registrations</h3>
+    <label class="step"><input type="checkbox" data-k="d3-4"><div class="sb">
+      <div class="st">Register a single-tenant public client</div>
+      <div class="path"><b>App registrations → New registration</b>: <code>SC300-Graph-Lab</code>, <i>this organizational directory only</i>. <b>Authentication → Allow public client flows = Yes</b>. <b>API permissions</b>: only Microsoft Graph <code>User.Read</code> (Delegated).</div>
+      <div class="why">A <span class="term" tabindex="0" data-tip="An app that can't keep a secret, such as a script on your laptop. It signs users in without a client secret.">public client</span> is something like a script on your laptop. It can't safely store a secret.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d3-5"><div class="sb">
+      <div class="st">Find its service principal</div>
+      <div class="path">Copy the Application (client) ID → <b>Enterprise applications</b> → search that ID.</div>
+      <div class="see">the same ID in both places: two objects for one app.</div>
+      <div class="why">The <span class="term" tabindex="0" data-tip="The app's global definition: its ID, redirect URIs and the permissions it requests.">app registration</span> defines the app. The <span class="term" tabindex="0" data-tip="The app's identity inside one tenant. Consent, assignments and sign-ins attach to it. It appears under Enterprise applications.">service principal</span> represents it inside your tenant.</div>
+    </div></label>
+    <h3>Lab 3: Microsoft Graph</h3>
+    <label class="step"><input type="checkbox" data-k="d3-6"><div class="sb">
+      <div class="st">Run graph-profile.py with device code sign-in</div>
+      <div class="path">From the course folder <code>day-03/lab-03/</code>, run the script with your tenant ID and client ID. Open the page it prints, enter the code, sign in as lab.user1.</div>
+      <div class="why"><span class="term" tabindex="0" data-tip="A sign-in flow where an app shows a code and you finish signing in on a separate browser page. Attackers also abuse it in phishing.">Device code</span> sign-in lets a script without a browser get a token for you.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d3-7"><div class="sb">
+      <div class="st">Record both results</div>
+      <div class="see"><code>GET /me</code> → <b>200</b> (your own profile) and <code>GET /users</code> → <b>403</b> (listing everyone).</div>
+      <div class="why">The 403 is a <b>successful negative control</b>. <code>User.Read</code> only covers the signed-in user. Don't "fix" it by adding permissions.</div>
+    </div></label>
+    <div class="note warn">Graph Explorer can show <code>GET /me</code> quickly, but it signs in as its own app, so it can't test <i>your</i> app's permissions. The script is the real test.</div>
+    <div class="quiz"><div class="qh">Check yourself</div>
+      <details><summary>Explain the difference between a person, an app registration, a service principal, a SAML assertion and a delegated access token.</summary><div class="ans"><b>Person</b>: the user account that signs in. <b>App registration</b>: the app's definition (ID, permissions it asks for). <b>Service principal</b>: that app's identity inside your tenant, where consent and assignments live. <b>SAML assertion</b>: a signed message telling an app who the user is (used for SSO). <b>Delegated access token</b>: lets an app call an API <i>on behalf of</i> the signed-in user, limited to both the user's rights and the consented permissions.</div></details>
+      <details><summary>A developer says "the 403 is blocking me, grant User.Read.All". What do you say?</summary><div class="ans">Not yet. The 403 shows the permission boundary is working. Ask what business need requires listing users, then consider the least privilege that meets it (for example User.ReadBasic.All) through the normal consent review.</div></details>
+      <details><summary>A user gets AADSTS50105. Should you reset their password?</summary><div class="ans">No. The password was accepted. The user simply isn't assigned to the app. Assign them only if they should have access.</div></details>
+    </div>
+    <details class="recs"><summary>Matching Lab Inbox records</summary><div class="tw"><table>
+      <tr><td>RITM0010031</td><td><span class="tag t-do">DO</span></td><td>SAML Toolkit, assigned vs unassigned</td></tr>
+      <tr><td>RITM0010032</td><td><span class="tag t-do">DO</span></td><td>App registration + service principal</td></tr>
+      <tr><td>RITM0010033</td><td><span class="tag t-do">DO</span></td><td>graph-profile.py: 200 / 403</td></tr>
+      <tr><td>RITM0010034</td><td><span class="tag t-no">REFUSE</span></td><td>"Grant admin consent for User.Read.All"</td></tr>
+      <tr><td>RITM0010035</td><td><span class="tag t-no">REFUSE</span></td><td>Unverified "Invoice PDF Converter" consent request</td></tr>
+      <tr><td>RITM0010036</td><td><span class="tag t-do">DO</span></td><td>Leaver: lab.user1 (disable, revoke, remove access, don't delete)</td></tr>
+    </table></div></details>
+  </div>
+</section>
+
+<!-- ============================ DAY 4 ============================ -->
+<section class="day" id="d4" data-day="4">
+  <div class="dayh"><h2>Day 4: PIM, access reviews, access packages</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+    <div class="goal">Goal: control how privileged access is granted, and make sure access is removed when it's no longer needed. Needs Entra ID P2.</div></div>
+  <div class="dayb">
+    <p class="muted">The course emails you shared cover Days 0–3 and say Day 4 is PIM, access reviews and access packages. These steps come from the Lab Inbox's Day 4 tickets.</p>
+    <label class="step"><input type="checkbox" data-k="d4-1"><div class="sb">
+      <div class="st">Safety check first</div>
+      <div class="path">Confirm <b>your own</b> account still has Global Administrator.</div>
+      <div class="why">You're about to remove an active admin role. Make sure you can't lock yourself out.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-2"><div class="sb">
+      <div class="st">Make Lab-Admin's role eligible</div>
+      <div class="path"><b>Identity Governance → Privileged Identity Management → Microsoft Entra roles → Roles → Privileged Role Administrator → Add assignments</b> → SC300-Lab-Admin, type <b>Eligible</b>. Then remove its <b>Active</b> assignment.</div>
+      <div class="why"><span class="term" tabindex="0" data-tip="Privileged Identity Management: makes admin roles just-in-time, time-limited and approval-based.">PIM</span> turns standing admin rights into rights that exist only when activated.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-3"><div class="sb">
+      <div class="st">Set activation rules</div>
+      <div class="path">Same role → <b>Role settings → Edit</b>: max 2 hours, require MFA, require justification, require approval (you). Check the <b>Notification</b> tab.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-4"><div class="sb">
+      <div class="st">Request, approve and deactivate</div>
+      <div class="path">As SC300-Lab-Admin: <b>PIM → My roles → Activate</b> with a real reason. As yourself: <b>PIM → Approve requests</b>. Then deactivate as Lab-Admin.</div>
+      <div class="why">An approver checks four things: is it the right person, is the timing normal, does the reason match real work, and is the duration sensible?</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-5"><div class="sb">
+      <div class="st">Run an access review of GRP-Support</div>
+      <div class="path"><b>Identity Governance → Access reviews → New access review</b> → Teams + Groups → GRP-Support. Reviewer: you. Auto-apply results. Start it, deny the guest, then apply.</div>
+      <div class="why"><span class="term" tabindex="0" data-tip="A scheduled check where someone accountable confirms each person still needs their access.">Access reviews</span> catch leftover access: finished contractors, movers, and leavers that someone forgot.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-6"><div class="sb">
+      <div class="st">Build an access package that expires</div>
+      <div class="path"><b>Identity Governance → Entitlement management → Access packages → New</b>: <code>AP-Support-Temp</code>, GRP-Support Member, approval required, expires after 30 days. Request it as Helpdesk in My Access and approve it.</div>
+      <div class="why">An <span class="term" tabindex="0" data-tip="A bundle of access (groups, apps, sites) with a policy for who can request it, who approves, and when it expires.">access package</span> turns "remember to remove it" into "it removes itself".</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-7"><div class="sb">
+      <div class="st">Lifecycle workflow for leavers <span class="tag t-opt">OPTIONAL</span></div>
+      <div class="path">Needs <b>Entra ID Governance</b>, not just P2. <b>Lifecycle workflows → Create workflow</b> → template "Real-time employee termination" → run on demand for a throwaway <span class="dom" data-u="lab.user2"></span>.</div>
+      <div class="why">That template removes the user from all groups and Teams, then <b>deletes the account</b>. Never test it on a user you need.</div>
+    </div></label>
+    <div class="quiz"><div class="qh">Check yourself</div>
+      <details><summary>Jamie's eligible role activation arrives at 2 a.m. with the reason "fix". Approve?</summary><div class="ans">No. Deny it, contact Jamie through a channel you already trust, and check the account's sign-ins. Off-hours timing plus a vague reason is exactly what approval exists to catch.</div></details>
+      <details><summary>What's the difference between active and eligible?</summary><div class="ans">Active: the rights are always on. Eligible: no rights until the user activates the role for a limited time, usually with MFA, a reason and maybe approval.</div></details>
+      <details><summary>Your access review denied the guest. Is the guest account deleted?</summary><div class="ans">Not by default. The review removes the access it covered (here, group membership). Guest reviews can also be configured to block and later remove denied guests.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ EVIDENCE ============================ -->
+<h2 id="evidence">Where to find evidence</h2>
+<p class="intro">Every change leaves a trail. Here's where to look, and what to search for.</p>
+<div class="grid">
+  <div class="card"><h3>Which log?</h3>
+    <ul>
+      <li><b>Directory changes</b> (users, groups, roles, apps, policies): Entra → Monitoring &amp; health → <b>Audit logs</b>. Open an event → <b>Modified properties</b> shows old and new values.</li>
+      <li><b>Sign-ins</b>: <b>Sign-in logs</b> → Basic info, Authentication details, Report-only tab.</li>
+      <li><b>Azure resources</b> (resource groups, VMs, budgets): the resource → <b>Activity log</b>. Separate from Entra's logs.</li>
+      <li><b>PIM</b>: PIM → Microsoft Entra roles → Resource audit.</li>
+    </ul></div>
+  <div class="card"><h3>Audit activities to filter on</h3>
+    <ul>
+      <li><code>Add user</code> · <code>Update user</code> · <code>Change user license</code></li>
+      <li><code>Add member to role</code> · <code>Add scoped member to role</code></li>
+      <li><code>Add member to group</code> · <code>Remove member from group</code></li>
+      <li>Revoke sessions: <code>Update StsRefreshTokenValidFrom Timestamp</code></li>
+      <li>Admin reset: <code>Reset password (by admin)</code></li>
+      <li><code>Invite external user</code> · <code>Redeem external user invite</code></li>
+      <li><code>User registered security info</code></li>
+      <li><code>Add conditional access policy</code></li>
+      <li><code>Consent to application</code> · <code>Add delegated permission grant</code></li>
+    </ul>
+    <p class="muted">Microsoft renames activities from time to time. If a filter finds nothing, filter by the target instead.</p></div>
+  <div class="card"><h3>Emailed or only logged?</h3>
+    <p>A real tenant can <b>email</b> you about PIM changes, budget alerts, guest invites, admin consent requests, access reviews, access packages, SAML certificate expiry and Cloud Sync quarantine. Most need setting up first.</p>
+    <p>Everything else is <b>only in the logs</b>. That's why you learn to read them.</p></div>
+</div>
+
+<!-- ============================ TROUBLESHOOTING ============================ -->
+<h2 id="errors">Troubleshooting</h2>
+<p class="intro">What you see, what it really means, and what to do.</p>
+<div class="tw"><table>
+<tr><th>You see</th><th>It means</th><th>Do this</th></tr>
+<tr><td>Tenant overview shows the wrong company</td><td>Signed in to another directory</td><td>Switch directory from your account menu (top right)</td></tr>
+<tr><td>License assignment fails</td><td>Usage location isn't set</td><td>Set it on the user, then assign in the Microsoft 365 admin center</td></tr>
+<tr><td>No license option in Entra</td><td>Licensing moved</td><td>Microsoft 365 admin center → Billing → Licenses</td></tr>
+<tr><td>Helpdesk can't reset an admin's password</td><td>Its scope is AU-Lab</td><td>Nothing. The boundary is working</td></tr>
+<tr><td>"Previously satisfied" in Authentication details</td><td>No new prompt in this sign-in</td><td>Sign in again in a fresh private window</td></tr>
+<tr><td>Can't turn a CA policy On</td><td>Security defaults is still on</td><td>Leave it in report-only for the lab</td></tr>
+<tr><td><code>AADSTS50105</code></td><td>User not assigned to the app</td><td>Expected for unassigned users. Don't reset passwords</td></tr>
+<tr><td><code>GET /users</code> → 403</td><td><code>User.Read</code> only covers yourself</td><td>Expected. Don't add permissions</td></tr>
+<tr><td>PIM or access reviews missing</td><td>No P2 license or trial</td><td>Start an Entra ID P2 trial</td></tr>
+<tr><td>Lifecycle workflows unavailable</td><td>Needs ID Governance</td><td>Skip it, or start a Governance trial</td></tr>
+<tr><td>Unexpected Azure charges</td><td>Something is still running</td><td>Cost Management → Cost analysis → group by Resource, then deallocate</td></tr>
+</table></div>
+
+<!-- ============================ GLOSSARY ============================ -->
+<h2 id="glossary">Glossary</h2>
+<p class="intro">Plain-English definitions for the terms in this guide.</p>
+<dl class="gloss">
+  <dt>Tenant</dt><dd>Your organization's identity directory in Entra: users, groups, apps, settings. Identified by its primary domain and Tenant ID.</dd>
+  <dt>Subscription</dt><dd>Where Azure charges are billed. Resources live inside it.</dd>
+  <dt>Resource group</dt><dd>A named folder for Azure resources. Empty ones cost nothing.</dd>
+  <dt>License</dt><dd>Unlocks features for a user. Never grants admin permissions.</dd>
+  <dt>Role</dt><dd>A set of admin permissions, such as resetting passwords or managing apps.</dd>
+  <dt>Scope</dt><dd>Where a role applies: the whole directory, or one administrative unit.</dd>
+  <dt>Administrative unit</dt><dd>A container that limits what a scoped admin can manage.</dd>
+  <dt>Guest (B2B)</dt><dd>An outside user who signs in with their own account. User type = Guest.</dd>
+  <dt>Cloud Sync</dt><dd>Copies users and groups from on-prem Active Directory into Entra.</dd>
+  <dt>Hybrid joined device</dt><dd>A Windows PC joined to on-prem AD and also registered in Entra.</dd>
+  <dt>PRT</dt><dd>Primary Refresh Token: a joined device's long-lived token for single sign-on.</dd>
+  <dt>MFA</dt><dd>Multifactor authentication: something you know plus something you have or are.</dd>
+  <dt>Number matching</dt><dd>You type the number from the sign-in screen into Authenticator, so you can't blindly approve a prompt you didn't start.</dd>
+  <dt>Previously satisfied</dt><dd>No new MFA prompt. The session already had an MFA claim.</dd>
+  <dt>Conditional Access</dt><dd>If-then rules for sign-ins: if this user, app or risk, then require MFA, block, and so on.</dd>
+  <dt>Report-only</dt><dd>A Conditional Access policy that records its result but never enforces it.</dd>
+  <dt>Security defaults</dt><dd>Microsoft's basic tenant-wide protection, including MFA. Replaced by Conditional Access in larger setups.</dd>
+  <dt>Emergency access account</dt><dd>A "break-glass" Global Admin excluded from Conditional Access, used only if everyone else is locked out.</dd>
+  <dt>Temporary Access Pass</dt><dd>A short-lived, often one-time passcode an admin issues so a verified user can sign in and re-register MFA.</dd>
+  <dt>SSO</dt><dd>Single sign-on: sign in once to Entra, and Entra vouches for you to apps.</dd>
+  <dt>SAML assertion</dt><dd>A signed message telling an app who the user is. NameID is the user identifier inside it.</dd>
+  <dt>App registration</dt><dd>An app's definition: its ID and the permissions it asks for.</dd>
+  <dt>Service principal</dt><dd>An app's identity inside your tenant (under Enterprise applications).</dd>
+  <dt>Delegated permission</dt><dd>Lets an app act on behalf of the signed-in user, limited by what that user can do.</dd>
+  <dt>Admin consent</dt><dd>An admin approving an app's permissions for everyone in the tenant. Treat it carefully.</dd>
+  <dt>Device code flow</dt><dd>Sign-in where an app shows a code that you enter on a browser page.</dd>
+  <dt>PIM</dt><dd>Privileged Identity Management: just-in-time, time-limited, approved admin roles.</dd>
+  <dt>Eligible vs active</dt><dd>Eligible: activate when needed. Active: always on.</dd>
+  <dt>Access review</dt><dd>A periodic check that people still need their access.</dd>
+  <dt>Access package</dt><dd>Requestable bundle of access with approval and an expiry date.</dd>
+  <dt>Lifecycle workflow</dt><dd>Automated joiner/mover/leaver tasks. Needs ID Governance.</dd>
+  <dt>Deallocated</dt><dd>A stopped VM that isn't billed for compute. "Stopped" from inside Windows is not enough.</dd>
+</dl>
+
+<!-- ============================ CLEANUP ============================ -->
+<h2 id="cleanup">Cleanup and ground rules</h2>
+<div class="grid">
+  <div class="card"><h3>Keep costs at zero</h3>
+    <ul>
+      <li>After every hybrid session: each VM → <b>Stop</b> → <b>Stopped (deallocated)</b>.</li>
+      <li>Budget alerts warn, they never stop charges.</li>
+      <li>When the course is done, delete <code>rg-sc300-lab</code> (everything inside goes with it), the guest and the test users.</li>
+      <li>Check the Microsoft 365 admin center → Billing for trials that convert to paid.</li>
+    </ul></div>
+  <div class="card"><h3>Always</h3>
+    <ul>
+      <li>Work in a lab tenant you own.</li>
+      <li>Keep an emergency access account excluded from Conditional Access.</li>
+      <li>Find the evidence before moving on.</li>
+      <li>Hide passwords, tenant IDs and personal details in screenshots you share.</li>
+    </ul></div>
+  <div class="card"><h3>Never</h3>
+    <ul>
+      <li>Share passwords or MFA codes with anyone, including an instructor or an AI assistant.</li>
+      <li>Disable security controls or add permissions to match a screenshot.</li>
+      <li>Give the helpdesk account a tenant-wide admin role.</li>
+      <li>Build paid resources before the budget exists.</li>
+    </ul></div>
+</div>
+
+<h2>Microsoft Learn</h2>
+<div class="grid">
+  <div class="card"><ul>
+    <li><a href="https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/sc-300" target="_blank" rel="noopener">SC-300 study guide (skills measured)</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/fundamentals/license-users-groups" target="_blank" rel="noopener">Assign licenses</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-create-budgets" target="_blank" rel="noopener">Create and manage budgets</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/admin-units-assign-roles" target="_blank" rel="noopener">Roles scoped to an administrative unit</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/external-id/add-users-administrator" target="_blank" rel="noopener">Add B2B guest users</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/hybrid/cloud-sync/what-is-cloud-sync" target="_blank" rel="noopener">What is Entra Cloud Sync?</a></li>
+  </ul></div>
+  <div class="card"><ul>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-methods-manage" target="_blank" rel="noopener">Manage authentication methods</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-mfa-number-match" target="_blank" rel="noopener">Number matching</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-conditional-access-report-only" target="_blank" rel="noopener">Conditional Access report-only mode</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/security-emergency-access" target="_blank" rel="noopener">Emergency access accounts</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/fundamentals/security-defaults" target="_blank" rel="noopener">Security defaults</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-ins" target="_blank" rel="noopener">Sign-in logs</a></li>
+  </ul></div>
+  <div class="card"><ul>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/assign-user-or-group-access-portal" target="_blank" rel="noopener">Assign users to an app</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/app-objects-and-service-principals" target="_blank" rel="noopener">App and service principal objects</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code" target="_blank" rel="noopener">Device code flow</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/graph/permissions-reference" target="_blank" rel="noopener">Graph permissions reference</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management/pim-how-to-add-role-to-user" target="_blank" rel="noopener">Assign roles in PIM</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/id-governance/access-reviews-overview" target="_blank" rel="noopener">Access reviews</a></li>
+  </ul></div>
+</div>
+<p style="margin-top:24px"><button class="reset" id="resetTicks">Clear all ticks</button></p>
+</div>
+
+<script>
+(function(){
+  const KEY = "sc300-setup-guide-v1";
+  const DEF = "yourlab.onmicrosoft.com";
+  let st = { dom:"", ticks:{} };
+  try{ const x = JSON.parse(localStorage.getItem(KEY)); if(x && typeof x === "object") st = Object.assign(st, x); }catch(e){}
+  const save = ()=>{ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} };
+  const $$ = s => [...document.querySelectorAll(s)];
+
+  function paintDomain(){
+    const d = st.dom || DEF;
+    $$(".dom[data-u]").forEach(el=>{ el.textContent = el.dataset.u + "@" + d; });
+  }
+  function paintProgress(){
+    const boxes = $$(".step input");
+    let all = 0;
+    boxes.forEach(b=>{ b.checked = !!st.ticks[b.dataset.k]; b.closest(".step").classList.toggle("done", b.checked); if(b.checked) all++; });
+    document.getElementById("pAll").textContent = all;
+    document.getElementById("pTot").textContent = boxes.length;
+    $$(".day").forEach(sec=>{
+      const bs = [...sec.querySelectorAll(".step input")], n = bs.filter(b=>b.checked).length;
+      sec.querySelector(".pc").textContent = `${n}/${bs.length}`;
+      sec.querySelector(".bar i").style.width = (bs.length ? n/bs.length*100 : 0) + "%";
+    });
+  }
+  const dom = document.getElementById("dom");
+  dom.value = st.dom;
+  dom.addEventListener("input", ()=>{
+    st.dom = dom.value.trim().toLowerCase().replace(/^@/, "");
+    save(); paintDomain();
+  });
+  $$(".step input").forEach(b=>b.addEventListener("change", ()=>{ st.ticks[b.dataset.k] = b.checked; save(); paintProgress(); }));
+  document.getElementById("resetTicks").addEventListener("click", ()=>{ st.ticks = {}; save(); paintProgress(); });
+
+  /* highlight the tab for the section in view */
+  const tabs = $$("#tabs a"), targets = tabs.map(a=>document.querySelector(a.getAttribute("href")));
+  function onScroll(){
+    let cur = 0;
+    targets.forEach((t,i)=>{ if(t && t.getBoundingClientRect().top < 140) cur = i; });
+    tabs.forEach((a,i)=>a.classList.toggle("on", i===cur));
+  }
+  window.addEventListener("scroll", onScroll, { passive:true });
+
+  paintDomain(); paintProgress(); onScroll();
+})();
+</script>
+</body>
+</html>
