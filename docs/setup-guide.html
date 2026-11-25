@@ -435,48 +435,84 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
 <!-- ============================ DAY 4 ============================ -->
 <section class="day" id="d4" data-day="4">
   <div class="dayh"><h2>Day 4: PIM, access reviews and entitlement management</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
-    <div class="goal">Goal: control how privileged access is granted, and make sure access is removed when it's no longer needed. Needs Entra ID P2.</div></div>
+    <div class="goal">Goal: keep temporary access temporary. Make a role just-in-time, review who still needs it, grant and cleanly remove access with an access package, then close the lab. Needs Entra ID P2.</div></div>
   <div class="dayb">
-    <p class="muted">The course emails you shared cover Days 0–3 and say Day 4 is PIM, access reviews and access packages. These steps come from the Lab Inbox's Day 4 tickets.</p>
+    <div class="note why"><b>The big idea:</b> identity governance is what stops temporary access from becoming permanent by accident.</div>
+    <h3>Lab 1: Privileged Identity Management</h3>
     <label class="step"><input type="checkbox" data-k="d4-1"><div class="sb">
       <div class="st">Safety check first</div>
       <div class="path">Confirm <b>your own</b> account still has Global Administrator.</div>
-      <div class="why">You're about to remove an active admin role. Make sure you can't lock yourself out.</div>
+      <div class="why">You'll be changing role assignments. Make sure you can't lock yourself out.</div>
     </div></label>
     <label class="step"><input type="checkbox" data-k="d4-2"><div class="sb">
-      <div class="st">Make Lab-Admin's role eligible</div>
-      <div class="path"><b>Identity Governance → Privileged Identity Management → Microsoft Entra roles → Roles → Privileged Role Administrator → Add assignments</b> → SC300-Lab-Admin, type <b>Eligible</b>. Then remove its <b>Active</b> assignment.</div>
-      <div class="why"><span class="term" tabindex="0" data-tip="Privileged Identity Management: makes admin roles just-in-time, time-limited and approval-based.">PIM</span> turns standing admin rights into rights that exist only when activated.</div>
+      <div class="st">Make the lab participant eligible for Directory Readers</div>
+      <div class="path"><b>Identity Governance → Privileged Identity Management → Microsoft Entra roles → Roles → Directory Readers → Add assignments</b> → SC300-Lab-Helpdesk, type <b>Eligible</b>.</div>
+      <div class="why"><span class="term" tabindex="0" data-tip="Eligible: the person can request activation but holds no permission until they do. Active: the permission is in effect right now.">Eligible vs active</span>. Directory Readers is low-risk, so you can learn the mechanics safely.</div>
     </div></label>
     <label class="step"><input type="checkbox" data-k="d4-3"><div class="sb">
-      <div class="st">Set activation rules</div>
-      <div class="path">Same role → <b>Role settings → Edit</b>: max 2 hours, require MFA, require justification, require approval (you). Check the <b>Notification</b> tab.</div>
+      <div class="st">Activate it from the participant's own session</div>
+      <div class="path">In SC300-Lab-Helpdesk's browser profile: <b>PIM → My roles → Eligible assignments → Directory Readers → Activate</b>, with a justification.</div>
+      <div class="see">the role under <b>Active assignments</b>, with an end time.</div>
     </div></label>
     <label class="step"><input type="checkbox" data-k="d4-4"><div class="sb">
-      <div class="st">Request, approve and deactivate</div>
-      <div class="path">As SC300-Lab-Admin: <b>PIM → My roles → Activate</b> with a real reason. As yourself: <b>PIM → Approve requests</b>. Then deactivate as Lab-Admin.</div>
-      <div class="why">An approver checks four things: is it the right person, is the timing normal, does the reason match real work, and is the duration sensible?</div>
+      <div class="st">Inspect the PIM audit event, then deactivate</div>
+      <div class="path">As yourself: <b>PIM → Microsoft Entra roles → Resource audit</b> → open the activation. Then as the participant: <b>My roles → Active assignments → Deactivate</b>, and find the deactivation event too.</div>
+      <div class="why">Activation plus deactivation is your evidence that the access was temporary. That's pass check 1.</div>
     </div></label>
+    <h3>Lab 2: Access reviews</h3>
     <label class="step"><input type="checkbox" data-k="d4-5"><div class="sb">
-      <div class="st">Run an access review of GRP-Support</div>
-      <div class="path"><b>Identity Governance → Access reviews → New access review</b> → Teams + Groups → GRP-Support. Reviewer: you. Auto-apply results. Start it, deny the guest, then apply.</div>
-      <div class="why"><span class="term" tabindex="0" data-tip="A scheduled check where someone accountable confirms each person still needs their access.">Access reviews</span> catch leftover access: finished contractors, movers, and leavers that someone forgot.</div>
+      <div class="st">Create a narrow review of that eligible assignment</div>
+      <div class="path"><b>PIM → Microsoft Entra roles → Access reviews → New</b>: role Directory Readers, assignment type Eligible, scoped to SC300-Lab-Helpdesk. Reviewers: <b>Members (self)</b>. <b>Auto apply results: Off</b>.</div>
+      <div class="why">This one-user lab shows the workflow. It isn't real <span class="term" tabindex="0" data-tip="The person who benefits from access shouldn't be the only one who approves it. In real reviews a manager or resource owner usually decides.">separation of duties</span>. With auto-apply off, decisions are recorded but nothing changes until someone applies them.</div>
     </div></label>
     <label class="step"><input type="checkbox" data-k="d4-6"><div class="sb">
-      <div class="st">Build an access package that expires</div>
-      <div class="path"><b>Identity Governance → Entitlement management → Access packages → New</b>: <code>AP-Support-Temp</code>, GRP-Support Member, approval required, expires after 30 days. Request it as Helpdesk in My Access and approve it.</div>
-      <div class="why">An <span class="term" tabindex="0" data-tip="A bundle of access (groups, apps, sites) with a policy for who can request it, who approves, and when it expires.">access package</span> turns "remember to remove it" into "it removes itself".</div>
+      <div class="st">Record the decision and check the audit history</div>
+      <div class="path">As the participant: open the review in <b>My Access</b>, choose Approve or Deny with a reason. As yourself: the review's <b>Results</b>, then <b>Audit logs → Service = Access Reviews</b>.</div>
+      <div class="see">a completed review with the decision and reason. That's pass check 2.</div>
     </div></label>
+    <h3>Lab 3: Entitlement management</h3>
     <label class="step"><input type="checkbox" data-k="d4-7"><div class="sb">
+      <div class="st">Create a catalog and an access package for your owned lab group</div>
+      <div class="path">Make sure you're an <b>Owner</b> of GRP-Support and note its members (your baseline). <b>Entitlement management → Catalogs → New</b>: <code>Lab catalog</code>, add GRP-Support. Then <b>Access packages → New</b> in that catalog: <code>AP-Support-Temp</code>, GRP-Support Member, requestable by SC300-Lab-Helpdesk.</div>
+      <div class="why">An <span class="term" tabindex="0" data-tip="A bundle of access (groups, apps, sites) with a policy for who can request it, who approves, and when it expires.">access package</span> grants and removes access through the same system.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-8"><div class="sb">
+      <div class="st">Request it, verify delivery, then remove it</div>
+      <div class="path">As the participant: request AP-Support-Temp in <b>My Access</b>. Check the assignment is <b>Delivered</b> and GRP-Support lists them. Then <b>AP-Support-Temp → Assignments → Remove access</b>.</div>
+      <div class="see">GRP-Support's members back at your baseline. That's pass check 3.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-9"><div class="sb">
       <div class="st">Lifecycle workflow for leavers <span class="tag t-opt">OPTIONAL</span></div>
       <div class="path">Needs <b>Entra ID Governance</b>, not just P2. <b>Lifecycle workflows → Create workflow</b> → template "Real-time employee termination" → run on demand for a throwaway <span class="dom" data-u="lab.user2"></span>.</div>
       <div class="why">That template removes the user from all groups and Teams, then <b>deletes the account</b>. Never test it on a user you need.</div>
     </div></label>
-    <div class="quiz"><div class="qh">Check yourself</div>
-      <details><summary>Jamie's eligible role activation arrives at 2 a.m. with the reason "fix". Approve?</summary><div class="ans">No. Deny it, contact Jamie through a channel you already trust, and check the account's sign-ins. Off-hours timing plus a vague reason is exactly what approval exists to catch.</div></details>
-      <details><summary>What's the difference between active and eligible?</summary><div class="ans">Active: the rights are always on. Eligible: no rights until the user activates the role for a limited time, usually with MFA, a reason and maybe approval.</div></details>
-      <details><summary>Your access review denied the guest. Is the guest account deleted?</summary><div class="ans">Not by default. The review removes the access it covered (here, group membership). Guest reviews can also be configured to block and later remove denied guests.</div></details>
+    <h3>Close the lab</h3>
+    <label class="step"><input type="checkbox" data-k="d4-10"><div class="sb">
+      <div class="st">Review everything temporary, and stop paid resources</div>
+      <div class="path">No leftover <b>active</b> role assignments, access-package assignments or guest access from the labs. Every VM <b>Stopped (deallocated)</b>, or delete <code>rg-sc300-lab</code>. Keep your emergency access account.</div>
+      <div class="why">Only remove what the labs created. Don't remove unrelated users or real permissions.</div>
+    </div></label>
+    <label class="step"><input type="checkbox" data-k="d4-11"><div class="sb">
+      <div class="st">Write your notes</div>
+      <div class="path">What you built, what broke, and how you verified each result.</div>
+      <div class="why">That's the part you can explain in a technical interview.</div>
+    </div></label>
+    <div class="quiz"><div class="qh">Check yourself (the final pass check)</div>
+      <details><summary>Can you show the PIM activation and deactivation evidence?</summary><div class="ans">PIM → Microsoft Entra roles → Resource audit: the activation of Directory Readers by the participant, then its deactivation, each with a time and initiator.</div></details>
+      <details><summary>Can you show a completed review and its decision?</summary><div class="ans">The access review's Results page (reviewer, decision, reason) and the matching event in Audit logs → Service = Access Reviews. With auto-apply off, the assignment itself didn't change.</div></details>
+      <details><summary>Can you demonstrate access-package delivery and clean removal?</summary><div class="ans">The assignment showed Delivered and the participant appeared in GRP-Support. After Remove access, GRP-Support's members matched your baseline again, and the audit log shows the entitlement management service adding and then removing the membership.</div></details>
+      <details><summary>What's the difference between eligible and active?</summary><div class="ans">Eligible: the person can request activation, but holds no permission until they do. Active: the permission is in effect right now.</div></details>
     </div>
+    <details class="recs"><summary>Matching Lab Inbox records</summary><div class="tw"><table>
+      <tr><td>RITM0010041</td><td><span class="tag t-do">DO</span></td><td>Directory Readers eligible, activate, audit, deactivate</td></tr>
+      <tr><td>CHG0010042</td><td><span class="tag t-do">DO</span></td><td>Jamie's admin role: just-in-time with approval</td></tr>
+      <tr><td>INC0010043</td><td><span class="tag t-no">REFUSE</span></td><td>02:07 activation with the reason "fix"</td></tr>
+      <tr><td>RITM0010044</td><td><span class="tag t-no">REFUSE</span></td><td>"Make my role permanent again"</td></tr>
+      <tr><td>RITM0010045</td><td><span class="tag t-do">DO</span></td><td>Access review of the eligible assignment, auto-apply off</td></tr>
+      <tr><td>RITM0010046</td><td><span class="tag t-do">DO</span></td><td>Catalog + access package: delivery and clean removal</td></tr>
+      <tr><td>CHG0010047</td><td><span class="tag t-opt">OPTIONAL</span></td><td>Lifecycle workflow for leavers</td></tr>
+      <tr><td>RITM0010048</td><td><span class="tag t-do">DO</span></td><td>End-of-course cleanup and final pass check</td></tr>
+    </table></div></details>
   </div>
 </section>
 

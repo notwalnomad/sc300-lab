@@ -528,7 +528,7 @@ const DAYS = [
       "Open the invitation in that mailbox from a <b>private window</b> and accept it.",
       "Users → the guest → Properties: <b>User type</b> = Guest, invitation state = Accepted. Assigned roles = none."
     ],
-    hint:"Write down when this guest's access should end (two weeks). Nothing in Entra removes it automatically yet. Day 4 fixes that.",
+    hint:"Write down when this guest's access should end (two weeks). Nothing in Entra removes it automatically yet. Day 4 shows how access packages make access expire, and its cleanup ticket removes this guest.",
     verify:"Audit logs → filter Activity = <code>Invite external user</code>, then <code>Redeem external user invite</code>. Compare the two <b>Initiated by</b> values.",
     learn:["b2binvite","b2b"],
     evidence:{
@@ -882,53 +882,57 @@ const DAYS = [
       audit:[["Core Directory","Update user","you","lab.user1 (AccountEnabled: true → false)"],["Core Directory","Update StsRefreshTokenValidFrom Timestamp","you","lab.user1 (Revoke sessions)"],["Core Directory","Remove member from group","you","lab.user1 → GRP-Support"],["Core Directory","Remove member from administrative unit","you","lab.user1 → AU-Lab"],["Authentication Methods","Admin deleted security info","you","lab.user1 (Microsoft Authenticator)"]],
       mail:{ from:"Lab Inbox (evidence card)", tag:"sim", subj:"Leaver complete: lab.user1's full story in the audit log",
         body:`<p>Filter the audit log on lab.user1 and read it top to bottom: joiner (Sales) → mover (Support) → incident → leaver. That's the identity lifecycle, and the audit log is its biography.</p>
-        <p>Every manual click here is a chance to miss something. On Day 4, an access review checks your work, and lifecycle workflows can automate it.</p>` } } }
+        <p>Every manual click here is a chance to miss something. On Day 4, access reviews and the end-of-course cleanup check for leftovers like this, and lifecycle workflows can automate it.</p>` } } }
   ]},
 
 /* ---------------- DAY 4 ---------------- */
-{ title:"Day 4: PIM, access reviews and entitlement management", desc:"Just-in-time admin, approvals, access reviews, access packages and lifecycle workflows.",
+{ title:"Day 4: PIM, access reviews and entitlement management", desc:"Keep temporary access temporary: just-in-time roles, a review of who still needs them, an access package you can grant and cleanly remove, and a final cleanup.",
   tickets:[
-  { id:"t41", type:"CHG", cat:"Access", sub:"Privileged access", ci:"PIM",
+  { id:"t41", type:"RITM", cat:"Access", sub:"Privileged access", ci:"PIM",
     from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
-    subj:"Make Jamie's admin role just-in-time",
-    body:`<p>Jamie's Privileged Role Administrator assignment is still <b>active 24/7</b>. Please convert it to <b>eligible</b> in PIM, so Jamie activates it only when needed.</p>
-      <p>Activation should require MFA, a justification and approval by you, and last 2 hours at most.</p>`,
+    subj:"Give Taylor read-only directory access, just in time",
+    body:`<p>Taylor needs to look up users and groups now and then, but not all day. Please make SC300-Lab-Helpdesk <b>eligible</b> for the low-risk <b>Directory Readers</b> role in PIM, so Taylor turns it on only when needed.</p>
+      <p>Then prove it end to end: Taylor activates it, you find the evidence, and Taylor switches it off again.</p>`,
     tasks:[
       "Before you start: confirm <b>your own</b> account still has Global Administrator, so you can't lock yourself out.",
-      "Identity Governance → Privileged Identity Management → Microsoft Entra roles → Roles → Privileged Role Administrator → Add assignments → SC300-Lab-Admin, Assignment type <b>Eligible</b>, end date in 6 months.",
-      "Same role → Assignments → <b>Active assignments</b> → remove SC300-Lab-Admin's active assignment.",
-      "Same role → Role settings → Edit: activation maximum duration 2 hours, require Azure MFA, require justification, <b>require approval</b> with yourself as approver.",
-      "Role settings → <b>Notification</b> tab: make sure you get role activation alerts and approval requests."
+      "Identity Governance → Privileged Identity Management → Microsoft Entra roles → Roles → <b>Directory Readers</b> → Add assignments → SC300-Lab-Helpdesk, Assignment type <b>Eligible</b>, with an end date.",
+      "In Taylor's own browser profile: PIM → <b>My roles</b> → Eligible assignments → Directory Readers → <b>Activate</b>, with a justification. Complete MFA if asked. Active assignments now shows the role with an end time.",
+      "As yourself: PIM → Microsoft Entra roles → <b>Resource audit</b> (or Audit logs → Service = PIM). Find the eligible assignment and Taylor's activation, and open each event.",
+      "Back as Taylor: My roles → Active assignments → <b>Deactivate</b>. Then check Resource audit again and find the deactivation event."
     ],
-    hint:`${T("Eligible","The user can activate the role when needed, but holds no admin rights until they do. A stolen session on an eligible-only account can't use the role straight away.")} vs ${T("active","The role is always on. Anyone who compromises the account gets the role immediately.")}: same role, much smaller attack window.`,
-    verify:"PIM → Microsoft Entra roles → <b>Resource audit</b>. Also the Entra audit log → Service = PIM (e.g. <code>Add eligible member to role in PIM completed (timebound)</code>). Compare this assignment email with the Day 0 one.",
-    learn:["pimassign","pimsettings","pim"],
+    hint:`${T("Eligible","The person can request activation, but holds no permission until they do.")} means Taylor <i>can</i> turn the role on. ${T("Active","The permission is in effect right now.")} means it's on right now. The course uses a low-risk read-only role so you can learn the mechanics safely before using PIM on powerful roles.`,
+    pushback:"Priya is the tenant owner and the role is read-only. Making it just-in-time is the safer way to give it, so this is exactly the kind of request to say yes to.",
+    verify:"PIM → Microsoft Entra roles → <b>Resource audit</b>: the eligible assignment, the activation and the deactivation, each with time and initiator. My roles (as Taylor) shows nothing active afterwards.",
+    learn:["pimassign","pim","audit"],
     evidence:{
-      audit:[["PIM","Add eligible member to role in PIM completed (timebound)","you","SC300-Lab-Admin → Privileged Role Administrator (eligible, 6 months)"],["PIM","Remove member from role in PIM completed (permanent)","you","SC300-Lab-Admin → Privileged Role Administrator (active)"],["PIM","Update role setting in PIM","you","Privileged Role Administrator: MFA, justification, approval, max 2h"]],
+      audit:[["PIM","Add eligible member to role in PIM completed (timebound)","you","SC300-Lab-Helpdesk → Directory Readers (eligible)"],["PIM","Add member to role completed (PIM activation)","SC300-Lab-Helpdesk","Directory Readers"]],
+      mail:{ from:"PIM notifications", tag:"real", subj:"PIM: SC300-Lab-Helpdesk has activated Directory Readers",
+        why:"This is the first pass check of the course's last day: can you show the activation and the deactivation evidence?",
+        body:`<p><b>Role:</b> Directory Readers<br><b>Activated by:</b> SC300-Lab-Helpdesk<br><b>Type:</b> Activated from an eligible assignment, with an end time</p>
+        <p>PIM can email admins when an eligible role is activated. Who gets these emails is set in the role's <b>Notification</b> settings.</p>
+        <p>Taylor's deactivation is a separate event in PIM's <b>Resource audit</b>. Find it: activation and deactivation together prove the access was temporary.</p>` } } },
+
+  { id:"t42", type:"CHG", cat:"Access", sub:"Privileged access", ci:"PIM",
+    from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
+    subj:"Make Jamie's admin role just-in-time, with approval",
+    body:`<p>Jamie's Privileged Role Administrator assignment is still <b>active 24/7</b>. Now that you've seen PIM on a low-risk role, use it where it matters: convert Jamie's role to <b>eligible</b>.</p>
+      <p>Activation should require MFA, a justification and approval by you, and last 2 hours at most. Then test one request.</p>`,
+    tasks:[
+      "PIM → Microsoft Entra roles → Roles → Privileged Role Administrator → Add assignments → SC300-Lab-Admin, Assignment type <b>Eligible</b>, end date in 6 months.",
+      "Same role → Assignments → <b>Active assignments</b> → remove SC300-Lab-Admin's active assignment.",
+      "Same role → Role settings → Edit: activation maximum duration 2 hours, require Azure MFA, require justification, <b>require approval</b> with yourself as approver. Check the <b>Notification</b> tab too.",
+      "In Jamie's browser profile (SC300-Lab-Admin): My roles → Activate Privileged Role Administrator with a real justification. As yourself: PIM → <b>Approve requests</b> → check requester, time, reason and duration → Approve.",
+      "As SC300-Lab-Admin: <b>Deactivate</b> when done. Resource audit shows the request, the approval and the deactivation."
+    ],
+    hint:"Privileged Role Administrator can assign any role, including Global Administrator, so it's the role that most needs just-in-time and approval. Approvers check four things: is it the person you expect, is the timing normal, does the justification match real work, and is the duration sensible?",
+    pushback:"Converting a standing admin role to just-in-time is what PIM is for, and the request comes from the tenant owner. Saying no would leave Privileged Role Administrator active around the clock.",
+    verify:"PIM → Privileged Role Administrator → Assignments shows SC300-Lab-Admin under <b>Eligible</b> only. Resource audit shows the request, approval and deactivation. Compare the assignment email with the Day 0 one.",
+    learn:["pimassign","pimsettings","pimapprove"],
+    evidence:{
+      audit:[["PIM","Add eligible member to role in PIM completed (timebound)","you","SC300-Lab-Admin → Privileged Role Administrator (eligible, 6 months)"],["PIM","Remove member from role in PIM completed (permanent)","you","SC300-Lab-Admin → Privileged Role Administrator (active)"],["PIM","Update role setting in PIM","you","Privileged Role Administrator: MFA, justification, approval, max 2h"],["PIM","Add member to role request approved (PIM activation)","you","SC300-Lab-Admin → Privileged Role Administrator"],["PIM","Add member to role completed (PIM activation)","SC300-Lab-Admin","Privileged Role Administrator"]],
       mail:{ from:"PIM notifications", tag:"real", subj:"PIM: SC300-Lab-Admin is now eligible for Privileged Role Administrator",
         body:`<p><b>Role:</b> Privileged Role Administrator<br><b>Assignee:</b> SC300-Lab-Admin<br><b>Type:</b> Eligible, ends in 6 months<br><b>Assigned by:</b> you</p>
-        <p>Compare this with the Day 0 email: <i>Active, permanent</i> has become <i>Eligible, time-bound</i>. Jamie still <b>can</b> do the job, but holds no standing admin rights between tasks.</p>` } } },
-
-  { id:"t42", type:"RITM", cat:"Access", sub:"Privileged access", ci:"PIM",
-    from:"Jamie Patel, Identity Engineer", pri:"P2", legit:true,
-    subj:"Activation request incoming, please approve",
-    body:`<p>Hi! I need Privileged Role Administrator this morning to review role assignments for the audit. I'll send the activation request now. Could you approve it?</p>
-      <p>For the lab, you'll play both of us: sign in as SC300-Lab-Admin to request, and as yourself to approve.</p>`,
-    tasks:[
-      "Private window, signed in as SC300-Lab-Admin: PIM → My roles → Eligible assignments → Privileged Role Administrator → <b>Activate</b>. Justification: <i>Audit prep: review role assignments (ticket t42)</i>. Complete the MFA prompt.",
-      "As yourself: PIM → <b>Approve requests</b> → check requester, justification, time and duration → Approve, with a comment.",
-      "Back as SC300-Lab-Admin: My roles → <b>Active assignments</b> shows the role with an end time. Click <b>Deactivate</b> when you're done.",
-      "As yourself: PIM → Microsoft Entra roles → Resource audit: find the request, the approval and the deactivation."
-    ],
-    hint:"Approvers check four things: is it the person you expect, is the timing normal, does the justification match real work, and is the duration sensible? This request passes all four. The next one won't.",
-    pushback:"Jamie told you in advance, the time is normal, and the justification matches real work. Approving good requests promptly is half of the approver's job. If approvals are a bottleneck, people start pushing for permanent access.",
-    verify:"PIM → Microsoft Entra roles → Resource audit, or the Entra audit log → Service = PIM.",
-    learn:["pimapprove","pim"],
-    evidence:{
-      audit:[["PIM","Add member to role request approved (PIM activation)","you","SC300-Lab-Admin → Privileged Role Administrator"],["PIM","Add member to role completed (PIM activation)","SC300-Lab-Admin","Privileged Role Administrator"]],
-      mail:{ from:"PIM notifications", tag:"real", subj:"PIM: SC300-Lab-Admin has activated Privileged Role Administrator",
-        body:`<p>PIM can email the approver when a request arrives, the requester when it's approved, and admins when the role is activated. You chose who gets which in the role's <b>Notification</b> settings.</p>
-        <p>The activation has an end time. When it passes, the role drops away by itself, with no clean-up ticket needed.</p>` } } },
+        <p>Compare this with the Day 0 email: <i>Active, permanent</i> has become <i>Eligible, time-bound</i>. Jamie still <b>can</b> do the job, but holds no standing admin rights between tasks, and every activation now needs your approval.</p>` } } },
 
   { id:"t43", type:"INC", cat:"Security", sub:"Privileged access", ci:"PIM",
     from:"PIM notifications", pri:"P1", legit:false,
@@ -962,49 +966,51 @@ const DAYS = [
     consequence:{ audit:[["PIM","Add member to role in PIM completed (permanent)","you","SC300-Lab-Admin → Privileged Role Administrator (active, permanent)",1]],
       toast:"Standing privileged access is back: SC300-Lab-Admin is permanently active again." } },
 
-  { id:"t45", type:"RITM", cat:"Governance", sub:"Access review", ci:"GRP-Support",
+  { id:"t45", type:"RITM", cat:"Governance", sub:"Access review", ci:"PIM",
     from:"Riley Chen, Internal Audit", pri:"P2", legit:true,
-    subj:"Access review: who still needs GRP-Support?",
-    body:`<p>The Larkspur audit ended last week. Please run an <b>access review</b> of GRP-Support, so someone accountable confirms every member still needs access.</p>
-      <p>I expect Jordan's guest account to be removed. If anyone else shows up who shouldn't be there, remove them too.</p>`,
+    subj:"Access review: does Taylor still need Directory Readers?",
+    body:`<p>For our audit I need proof that someone reviewed Taylor's eligible <b>Directory Readers</b> assignment and recorded a decision.</p>
+      <p>Keep it narrow: just that role and that person. For the lab, Taylor reviews their own access, and the results are <b>not</b> applied automatically.</p>`,
     tasks:[
-      "Identity Governance → Access reviews → New access review: <b>Teams + Groups</b> → select GRP-Support. Scope: All users.",
-      "Reviewers: Selected user(s) → yourself. Duration 1 day, one-time review. Under settings, turn on decision helpers (inactivity) and <b>Auto apply results</b>.",
-      "Start it. Open the review as the reviewer (from the email or the My Access portal). <b>Deny</b> Jordan's guest account, with a reason.",
-      "If lab.user1 appears, your Day 3 leaver missed a group. Deny it too.",
-      "Stop the review and <b>apply results</b> (or let auto-apply run). Confirm GRP-Support no longer contains the guest."
+      "Identity Governance → Privileged Identity Management → Microsoft Entra roles → <b>Access reviews</b> → New. Role: <b>Directory Readers</b>. Assignment type: <b>Eligible</b>. Scope it to SC300-Lab-Helpdesk only.",
+      "Reviewers: <b>Members (self)</b>. Duration 1 day, one-time.",
+      "Upon completion settings: <b>Auto apply results to resource = Off</b>. Start the review.",
+      "In Taylor's browser profile: open the review (from the email or the My Access portal), choose <b>Approve</b> or <b>Deny</b>, and write a reason. Submit.",
+      "As yourself: the review → <b>Results</b> shows Taylor's decision and reason. Audit logs → Service = Access Reviews shows the review and the decision. Note that nothing changed on the assignment, because auto-apply is off."
     ],
-    hint:`Access reviews catch ${T("leftover access","Access that was right once but nobody removed: finished contractors, movers, leavers, project groups that outlived the project.")}. That's the gap between what joiner and leaver tickets promise and what actually happened.`,
-    pushback:"Internal Audit is asking for evidence that access is still needed, and the guest's engagement has ended. This is exactly the governance an SC-300 admin should welcome.",
-    verify:"Access reviews → the review → <b>Results</b> and Audit logs → Service = Access Reviews. GRP-Support → Members confirms the outcome.",
+    hint:`A self-review demonstrates the workflow but isn't ${T("separation of duties","The person who benefits from access shouldn't be the only one who approves it. In real reviews, a manager or resource owner usually decides.")}. Leaving auto-apply off means decisions are recorded but nothing changes until someone applies them, so you can inspect the result safely first.`,
+    pushback:"Internal Audit is asking for evidence that a privileged assignment was reviewed. That's routine governance, and exactly what access reviews are for.",
+    verify:"The review → <b>Results</b> (decision, reviewer, reason) and Audit logs → Service = Access Reviews. PIM → Directory Readers → Assignments is unchanged.",
     learn:["reviews","reviewcreate"],
     evidence:{
-      audit:[["Access Reviews","Create access review","you","GRP-Support review"],["Access Reviews","Deny decision","you","Jordan Reyes (guest)"],["Access Reviews","Apply review","you","GRP-Support review"],["Core Directory","Remove member from group","Access Reviews (service)","Jordan Reyes (guest) → GRP-Support"]],
-      mail:{ from:"Access review notifications", tag:"real", subj:"Please review access to GRP-Support",
-        body:`<p>Real tenants send this email to reviewers when a review starts, with reminders before it ends.</p>
-        <p>Look at the last audit row: the removal was performed by the review service, not by you. Access reviews leave their own evidence trail, and auditors love that.</p>
-        <p>The guest still exists in your directory. The review removed group access, not the account. You can configure reviews of guests to block and then remove denied guests too.</p>` } } },
+      audit:[["Access Reviews","Create access review","you","Directory Readers: eligible assignment of SC300-Lab-Helpdesk"],["Access Reviews","Approve decision","SC300-Lab-Helpdesk","Directory Readers review (self-review)"]],
+      mail:{ from:"Access review notifications", tag:"real", subj:"Please review your access to Directory Readers",
+        why:"Second pass check of the course's last day: can you show a completed review and its decision?",
+        body:`<p>Real tenants email reviewers when a review starts, with reminders before it ends. Here the reviewer is Taylor, reviewing their own access.</p>
+        <p>With auto-apply off, the decision sits in the results until someone applies it. That's useful when you want to check a review before anything is removed.</p>` } } },
 
   { id:"t46", type:"RITM", cat:"Governance", sub:"Access package", ci:"Entitlement management",
     from:"Dana Okafor, Support Lead", pri:"P3", legit:true,
-    subj:"Self-service Support access that expires on its own",
-    body:`<p>Temporary people join Support every few weeks, and we always forget to remove them afterwards (see Riley's review!).</p>
-      <p>Can we have a request-and-approve process where access <b>expires automatically</b>?</p>`,
+    subj:"Self-service Support access you can grant and remove cleanly",
+    body:`<p>Temporary people join Support every few weeks, and we always forget to remove them afterwards. Can we have a self-service way to request GRP-Support access?</p>
+      <p>Please build it, test it with Taylor, then remove Taylor's assignment and show me the group is back to how it was.</p>`,
     tasks:[
-      "Identity Governance → Entitlement management → Access packages → New access package: name <code>AP-Support-Temp</code>, catalog <i>General</i>.",
-      "Resource roles → Groups and Teams → GRP-Support → role <b>Member</b>.",
-      "Requests: <i>For users in your directory</i> → Specific users and groups → SC300-Lab-Helpdesk. Require approval = Yes, approver = you, require requestor justification.",
-      "Lifecycle: access package assignments expire after <b>30 days</b>. Create.",
-      "As Taylor: open the My Access portal, request AP-Support-Temp with a justification. As yourself: approve. Then confirm Taylor is in GRP-Support and the assignment shows an end date."
+      "Groups → GRP-Support → <b>Owners</b>: make sure you're listed as an owner, and note the current <b>Members</b> list. That's your baseline.",
+      "Identity Governance → Entitlement management → <b>Catalogs</b> → New catalog: <code>Lab catalog</code>. Add resource: the group GRP-Support.",
+      "Access packages → New access package in <b>Lab catalog</b>: name <code>AP-Support-Temp</code>, resource role GRP-Support <b>Member</b>. Requests: <i>For users in your directory</i> → Specific users → SC300-Lab-Helpdesk. Approval off for this one-user lab. Assignments expire after 30 days.",
+      "In Taylor's browser profile: open the My Access portal and request AP-Support-Temp with a justification. As yourself: the assignment shows <b>Delivered</b>, and GRP-Support → Members now includes Taylor.",
+      "AP-Support-Temp → <b>Assignments</b> → select Taylor → <b>Remove access</b>. Confirm GRP-Support → Members matches your baseline again."
     ],
-    hint:`An ${T("access package","A bundle of access (groups, apps, SharePoint sites) with a policy saying who can request it, who approves, and when it expires.")} turns \"remember to remove it\" into \"it removes itself\".`,
-    verify:"Entitlement management → AP-Support-Temp → <b>Assignments</b> (end date) and <b>Requests</b>. Audit logs → Service = Entitlement Management.",
+    hint:`An ${T("access package","A bundle of access (groups, apps, SharePoint sites) with a policy for who can request it, who approves, and when it expires.")} delivers access and takes it away through the same system, so nothing is left behind. In production you'd normally require approval; it's off here because the lab has one user.`,
+    pushback:"The Support lead owns the access and is asking for a controlled way to grant and remove it. That's the point of entitlement management.",
+    verify:"Entitlement management → AP-Support-Temp → <b>Assignments</b> and <b>Requests</b> (delivered, then removed). GRP-Support → Members back at baseline. Audit logs → Service = Entitlement Management.",
     learn:["elm","elmcreate"],
     evidence:{
-      audit:[["Entitlement Management","Create access package","you","AP-Support-Temp"],["Entitlement Management","Create access package assignment policy","you","AP-Support-Temp: approval required, expires after 30 days"],["Entitlement Management","User requests access package assignment","SC300-Lab-Helpdesk","AP-Support-Temp"],["Entitlement Management","Approve access package assignment request","you","SC300-Lab-Helpdesk → AP-Support-Temp"],["Entitlement Management","Fulfill access package assignment request","Entitlement Management (service)","SC300-Lab-Helpdesk → AP-Support-Temp (expires in 30 days)"],["Core Directory","Add member to group","Entitlement Management (service)","SC300-Lab-Helpdesk → GRP-Support"]],
-      mail:{ from:"Entitlement management notifications", tag:"real", subj:"Your request for AP-Support-Temp has been approved",
-        body:`<p>Entitlement management emails approvers when a request needs a decision, and requesters when access is granted. It also emails them before the assignment expires.</p>
-        <p>In 30 days, Taylor's GRP-Support membership disappears on its own. Compare that with Jordan's guest access, which lasted until an audit caught it.</p>` } } },
+      audit:[["Entitlement Management","Create access package","you","AP-Support-Temp (Lab catalog)"],["Entitlement Management","Create access package assignment policy","you","AP-Support-Temp: SC300-Lab-Helpdesk, no approval, 30-day expiry"],["Entitlement Management","User requests access package assignment","SC300-Lab-Helpdesk","AP-Support-Temp"],["Entitlement Management","Fulfill access package assignment request","Entitlement Management (service)","SC300-Lab-Helpdesk → AP-Support-Temp"],["Core Directory","Add member to group","Entitlement Management (service)","SC300-Lab-Helpdesk → GRP-Support"],["Core Directory","Remove member from group","Entitlement Management (service)","SC300-Lab-Helpdesk → GRP-Support"]],
+      mail:{ from:"Entitlement management notifications", tag:"real", subj:"You now have access to AP-Support-Temp",
+        why:"Third pass check of the course's last day: can you demonstrate both access-package delivery and clean removal?",
+        body:`<p>Entitlement management emails requesters when access is granted, and before an assignment expires.</p>
+        <p>Look at the last two audit rows: the group membership was added <i>and</i> removed by the entitlement management service, not by hand. That's what "clean removal" means: the same system that gave the access took it away.</p>` } } },
 
   { id:"t47", type:"CHG", cat:"Governance", sub:"Automation", ci:"Lifecycle workflows",
     from:"HR People Team", pri:"P3", legit:true, optional:true,
@@ -1025,7 +1031,32 @@ const DAYS = [
       audit:[["Lifecycle Workflows","Create workflow","you","Real-time employee termination (lab)"],["Lifecycle Workflows","On-demand workflow execution completed","you","lab.user2@{d}"],["Core Directory","Remove member from group","Lifecycle Workflows (service)","lab.user2 → GRP-Support"],["Core Directory","Delete user","Lifecycle Workflows (service)","lab.user2 (soft-deleted, restorable for 30 days)"]],
       mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Leaver workflow ran for lab.user2",
         body:`<p>Workflow history shows each task with its own status. If one fails, for example on a permissions error, the others still report.</p>
-        <p>You now have three layers: a <b>process</b> (leaver tickets), <b>automation</b> (lifecycle workflows) and a <b>check</b> (access reviews). Real identity governance needs all three.</p>` } } }
+        <p>You now have three layers: a <b>process</b> (leaver tickets), <b>automation</b> (lifecycle workflows) and a <b>check</b> (access reviews). Real identity governance needs all three.</p>` } } },
+
+  { id:"t48", type:"RITM", cat:"Governance", sub:"Cleanup", ci:"Entra ID tenant",
+    from:"Riley Chen, Internal Audit", pri:"P2", legit:true,
+    subj:"End of course: close the lab cleanly",
+    body:`<p>Before we sign off the lab, please make sure nothing temporary has quietly become permanent, and that nothing is still costing money.</p>
+      <p>Only tidy up what the labs created. Don't remove unrelated users or anyone's real permissions.</p>`,
+    tasks:[
+      "PIM → Microsoft Entra roles → <b>Assignments</b>: no <b>Active</b> assignments left from the labs. Taylor's Directory Readers and Jamie's Privileged Role Administrator are <b>Eligible</b> only.",
+      "Groups → GRP-Support → Members: remove Jordan's guest account. The two-week audit from Day 1 ended long ago. Check lab.user1 isn't in any group either.",
+      "Entitlement management → AP-Support-Temp → Assignments: nothing left that you didn't mean to keep. Access reviews: the Directory Readers review is completed.",
+      "Azure portal: every VM shows <b>Stopped (deallocated)</b>, or delete <code>rg-sc300-lab</code> if you've finished the hybrid lab. Cost Management: no unexpected spend.",
+      "Keep your emergency access account and its Conditional Access exclusion. Then write short notes: what you built, what broke, and how you verified each result."
+    ],
+    hint:"Identity governance is what keeps temporary access from becoming permanent by accident. Your notes on what broke and how you proved the fix are what you'll talk about in an interview.",
+    pushback:"Internal Audit is asking you to remove leftover lab access and stop paid resources. Leaving them is how temporary access becomes permanent.",
+    verify:"PIM → Assignments (eligible only), GRP-Support → Members, AP-Support-Temp → Assignments, Access reviews → status, and each VM's status in the Azure portal.",
+    learn:["pim","reviews","budget"],
+    evidence:{
+      audit:[["Core Directory","Remove member from group","you","Jordan Reyes (guest) → GRP-Support"],["Azure Activity Log","Deallocate Virtual Machine","you","any lab VMs in rg-sc300-lab"]],
+      mail:{ from:"Lab coach", tag:"sim", subj:"Day 4 pass check: can you show all three?",
+        why:"These three questions are the course's final pass check. Answer them from your own tenant's evidence, not from this simulator.",
+        body:`<ol><li>Can you show the PIM <b>activation and deactivation</b> evidence for Directory Readers?</li>
+        <li>Can you show a <b>completed review</b> and its decision?</li>
+        <li>Can you demonstrate both <b>access-package delivery and clean removal</b>?</li></ol>
+        <p>If you can open each one in the portal and explain it, you've finished the labs. For exam topics the labs didn't cover, use the official SC-300 study guide.</p>` } } }
   ]}
 ];
 

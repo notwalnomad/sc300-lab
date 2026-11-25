@@ -12,7 +12,7 @@ Lab guides tell you what to click. Real IAM work starts with a request from a pe
 
 ## What's inside
 
-- **30 scenarios across five lab days**, delivered as incident (INC), requested item (RITM) and change (CHG) records with tasks, priority from impact × urgency, an SLA timer and an activity history.
+- **31 scenarios across five lab days**, delivered as incident (INC), requested item (RITM) and change (CHG) records with tasks, priority from impact × urgency, an SLA timer and an activity history.
 - **Legitimate work:** joiners, movers and leavers, scoped admin roles with administrative units, B2B guests, MFA evidence, Conditional Access in report-only mode, SAML SSO, app registrations, PIM, access reviews and access packages.
 - **Requests to refuse:** fake billing emails, "just make me Global Admin", MFA-removal phone calls, risky admin-consent requests and a 2 a.m. privileged-role activation.
 - **4 surprise injects** you or an instructor can trigger, including an MFA-fatigue attack with a simulated Authenticator prompt.
