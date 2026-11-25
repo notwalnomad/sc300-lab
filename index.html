@@ -329,7 +329,7 @@ const dm = str => String(str == null ? "" : str)
 /* ================= CONTENT ================= */
 const DAYS = [
 /* ---------------- DAY 0 ---------------- */
-{ title:"Day 0: Prerequisites", desc:"Admin accounts, a license, a budget, and your first two refusals.",
+{ title:"Day 0: Azure and Entra setup", desc:"Admin accounts, a license, a budget, and your first two refusals.",
   injects:[
   { id:"x01", type:"INC", cat:"Security", sub:"Cost anomaly", ci:"Azure subscription", pri:"P1", contact:"Monitoring",
     btn:["Three days later: 100% budget alert","Your resource group should still be empty…"],
@@ -453,7 +453,7 @@ const DAYS = [
   ]},
 
 /* ---------------- DAY 1 ---------------- */
-{ title:"Day 1: Roles, users and guests", desc:"Scoped admin roles. A joiner, a mover and an incident. A guest. Optional hybrid sync.",
+{ title:"Day 1: Users, groups, roles and hybrid identity", desc:"Scoped admin roles. A joiner, a mover and an incident. A guest. Optional hybrid sync.",
   injects:[
   { id:"x11", type:"INC", cat:"Security", sub:"Privilege escalation", ci:"Entra ID roles", pri:"P1", contact:"Monitoring",
     btn:["PIM email at 02:14","A role change you didn't make"],
@@ -624,7 +624,7 @@ const DAYS = [
   ]},
 
 /* ---------------- DAY 2 ---------------- */
-{ title:"Day 2: MFA and Conditional Access", desc:"Prove MFA happened. Pilot Conditional Access without locking anyone out.",
+{ title:"Day 2: MFA, Conditional Access and sign-in logs", desc:"Prove MFA happened. Pilot Conditional Access without locking anyone out.",
   injects:[
   { id:"x21", type:"INC", cat:"Security", sub:"MFA fatigue", ci:"Authentication methods", pri:"P1", contact:"Phone", push:true,
     btn:["Push: 'Are you trying to sign in?'","MFA fatigue drill for lab.user1"],
@@ -762,7 +762,7 @@ const DAYS = [
   ]},
 
 /* ---------------- DAY 3 ---------------- */
-{ title:"Day 3: Apps, consent and the leaver", desc:"A token proves who you are. Consent decides what an app can do. lab.user1 leaves.",
+{ title:"Day 3: SAML SSO, app registrations and Microsoft Graph", desc:"A token proves who you are. Consent decides what an app can do. lab.user1 leaves.",
   tickets:[
   { id:"t31", type:"RITM", cat:"Applications", sub:"Single sign-on", ci:"SAML Toolkit",
     from:"Priya Natarajan, IT Manager", pri:"P3", legit:true,
@@ -886,7 +886,7 @@ const DAYS = [
   ]},
 
 /* ---------------- DAY 4 ---------------- */
-{ title:"Day 4: PIM and governance", desc:"Just-in-time admin, approvals, access reviews, access packages and lifecycle workflows.",
+{ title:"Day 4: PIM, access reviews and entitlement management", desc:"Just-in-time admin, approvals, access reviews, access packages and lifecycle workflows.",
   tickets:[
   { id:"t41", type:"CHG", cat:"Access", sub:"Privileged access", ci:"PIM",
     from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,

@@ -162,7 +162,7 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
 
 <!-- ============================ DAY 0 ============================ -->
 <section class="day" id="d0" data-day="0">
-  <div class="dayh"><h2>Day 0: Prerequisites</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+  <div class="dayh"><h2>Day 0: Azure and Entra setup</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
     <div class="goal">Goal: find your tenant, create two lab accounts, give one a role and the other a license, and put a spending safety net in place. No VMs today.</div></div>
   <div class="dayb">
     <label class="step"><input type="checkbox" data-k="d0-1"><div class="sb">
@@ -226,7 +226,7 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
 
 <!-- ============================ DAY 1 ============================ -->
 <section class="day" id="d1" data-day="1">
-  <div class="dayh"><h2>Day 1: Roles, users, groups, guests, hybrid</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+  <div class="dayh"><h2>Day 1: Users, groups, roles and hybrid identity</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
     <div class="goal">Goal: understand who an identity is, what access it has, and where it comes from.</div></div>
   <div class="dayb">
     <div class="note why"><b>The big idea:</b> role = <i>what</i> an admin can do. <span class="term" tabindex="0" data-tip="Where a role applies: the whole directory, or only the users and groups inside an administrative unit.">Scope</span> = <i>where</i> they can do it. Most admin mistakes are the right role at the wrong scope.</div>
@@ -308,7 +308,7 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
 
 <!-- ============================ DAY 2 ============================ -->
 <section class="day" id="d2" data-day="2">
-  <div class="dayh"><h2>Day 2: MFA and Conditional Access evidence</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+  <div class="dayh"><h2>Day 2: MFA, Conditional Access and sign-in logs</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
     <div class="goal">Goal: prove MFA happened using the sign-in logs, and test a Conditional Access policy without enforcing it.</div></div>
   <div class="dayb">
     <div class="note why"><b>The big idea:</b> "it prompted for MFA" and "this policy required MFA" are two different claims. Each one needs its own evidence.</div>
@@ -372,7 +372,7 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
 
 <!-- ============================ DAY 3 ============================ -->
 <section class="day" id="d3" data-day="3">
-  <div class="dayh"><h2>Day 3: SSO, app registrations, Microsoft Graph</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+  <div class="dayh"><h2>Day 3: SAML SSO, app registrations and Microsoft Graph</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
     <div class="goal">Goal: connect an app to your tenant, then show what a delegated token can and can't do.</div></div>
   <div class="dayb">
     <div class="note why"><b>The big idea:</b> getting a token proves <i>who you are</i>. It doesn't decide <i>what you're allowed to do</i>. Permissions and assignments do that.</div>
@@ -434,7 +434,7 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
 
 <!-- ============================ DAY 4 ============================ -->
 <section class="day" id="d4" data-day="4">
-  <div class="dayh"><h2>Day 4: PIM, access reviews, access packages</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
+  <div class="dayh"><h2>Day 4: PIM, access reviews and entitlement management</h2><div class="prog"><span class="pc"></span><div class="bar"><i></i></div></div>
     <div class="goal">Goal: control how privileged access is granted, and make sure access is removed when it's no longer needed. Needs Entra ID P2.</div></div>
   <div class="dayb">
     <p class="muted">The course emails you shared cover Days 0–3 and say Day 4 is PIM, access reviews and access packages. These steps come from the Lab Inbox's Day 4 tickets.</p>
