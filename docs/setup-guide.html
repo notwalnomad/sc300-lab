@@ -245,6 +245,7 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
     <label class="step"><input type="checkbox" data-k="d1-3"><div class="sb">
       <div class="st">Create a lab user and a group</div>
       <div class="path">New user <span class="dom" data-u="lab.user1"></span>. <b>Groups → New group</b>: Security, Assigned membership. Add lab.user1 as a <b>member</b>. Add lab.user1 to AU-Lab too.</div>
+      <div class="see">the group's <b>Members</b> tab lists lab.user1 and its <b>Owners</b> tab doesn't. Under Properties, <i>Microsoft Entra roles can be assigned to the group</i> is <b>No</b>.</div>
       <div class="why">Membership isn't ownership, and neither one makes anyone an admin. (The exception is a <span class="term" tabindex="0" data-tip="A group created with 'Microsoft Entra roles can be assigned to the group' turned on. Its members get the roles assigned to the group.">role-assignable group</span>.)</div>
     </div></label>
     <label class="step"><input type="checkbox" data-k="d1-4"><div class="sb">
@@ -277,7 +278,7 @@ dl.gloss dd{background:var(--panel2);font-size:14px}
     </div></label>
     <label class="step"><input type="checkbox" data-k="d1-9"><div class="sb">
       <div class="st">Domain-join a Windows client and verify hybrid join</div>
-      <div class="path">Join a Windows client VM to the domain, then check its device record in Entra → <b>Devices</b>.</div>
+      <div class="path">Join a Windows client VM to the domain, register it with Entra using your course's hybrid-join steps, then check its device record in Entra → <b>Devices</b> and run <code>dsregcmd /status</code> on the client (look for <code>DomainJoined</code>, <code>AzureAdJoined</code> and <code>AzureAdPrt</code> all YES).</div>
       <div class="see">five separate checks: synced user, synced group, domain-joined client, its <span class="term" tabindex="0" data-tip="A Windows device joined to on-prem AD and also registered in Entra, so cloud policies can recognise it.">Entra hybrid joined</span> device record, and a healthy device/<span class="term" tabindex="0" data-tip="Primary Refresh Token: a long-lived sign-in token a joined Windows device holds for single sign-on to Microsoft cloud apps.">PRT</span> state.</div>
     </div></label>
     <label class="step"><input type="checkbox" data-k="d1-10"><div class="sb">

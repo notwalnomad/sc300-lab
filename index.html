@@ -291,6 +291,7 @@ const LEARN = {
   b2breset:  ["Reset a guest's redemption status","https://learn.microsoft.com/en-us/entra/external-id/reset-redemption-status"],
   revoke:    ["Revoke user access in an emergency","https://learn.microsoft.com/en-us/entra/identity/users/users-revoke-access"],
   sync:      ["What is Entra Cloud Sync?","https://learn.microsoft.com/en-us/entra/identity/hybrid/cloud-sync/what-is-cloud-sync"],
+  hybridjoin:["Microsoft Entra hybrid joined devices","https://learn.microsoft.com/en-us/entra/identity/devices/concept-hybrid-join"],
   authmethods:["Manage authentication methods","https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-methods-manage"],
   numbermatch:["Number matching in MFA push notifications","https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-mfa-number-match"],
   tap:       ["Temporary Access Pass","https://learn.microsoft.com/en-us/entra/identity/authentication/howto-authentication-temporary-access-pass"],
@@ -358,9 +359,10 @@ const DAYS = [
       <p>Make it an <b>active</b> assignment for now. We'll tighten it with PIM later.</p>
       <p>Keep this separate from Jamie's everyday account. ${T("Separate admin accounts","Admins use one account for email and browsing and a different one for admin work. If the everyday account gets phished, the attacker doesn't automatically get admin rights.")} are standard practice.</p>`,
     tasks:[
+      "Find your tenant first: Azure portal → search <b>Microsoft Entra ID</b> → <b>Overview</b>. Note the primary domain (like <code>mypractice.onmicrosoft.com</code>) and use it for every username. Your Azure signup usually created this tenant, so don't create another.",
       "Entra admin center → Identity → Users → All users → New user → Create new user. User principal name <code>sc300-lab-admin@{d}</code>, display name SC300-Lab-Admin. Note the temporary password somewhere safe (not here).",
       "Identity → Roles &amp; admins → Roles &amp; admins → Privileged Role Administrator → Add assignments → select SC300-Lab-Admin. If PIM asks for an assignment type, pick <b>Active</b>.",
-      "Sign in as SC300-Lab-Admin in a private browser window and change the temporary password."
+      "Sign in as SC300-Lab-Admin in its own <b>browser profile</b> and change the temporary password. Keep one profile per lab account from now on."
     ],
     hint:`Privileged Role Administrator can assign <i>any</i> Entra role, including Global Administrator. That's why it lives on a dedicated admin account, and why Day 4 makes it ${T("just-in-time","The role isn't active by default. The user activates it for a few hours when needed, usually with MFA, a justification and sometimes approval.")}.`,
     verify:"Identity → Roles &amp; admins → Privileged Role Administrator → <b>Assignments</b>. Then Monitoring &amp; health → Audit logs → filter Activity = <code>Add member to role</code> and open the event.",
@@ -382,7 +384,8 @@ const DAYS = [
       "Identity → Users → New user → Create new user: <code>sc300-lab-helpdesk@{d}</code>, display name SC300-Lab-Helpdesk.",
       "Open the user → Edit properties → Settings → set <b>Usage location</b> (licenses can't be assigned without it).",
       "<b>Microsoft 365 admin center</b> → Billing → Licenses → Microsoft Entra ID P2 → Assign licenses → SC300-Lab-Helpdesk. (Licenses can no longer be assigned in the Entra admin center UI. A free trial works.)",
-      "Open the user → <b>Assigned roles</b>. Confirm it's empty."
+      "Open the user → <b>Assigned roles</b>. Confirm it's empty.",
+      "Sign in as SC300-Lab-Helpdesk in a <b>separate browser profile</b> (not the admin's) and change the temporary password."
     ],
     hint:`A ${T("license","A license unlocks features for the user, for example PIM or risk-based Conditional Access. It never gives the user permission to change anything in the tenant.")} isn't a ${T("role","A role is a set of admin permissions, such as resetting passwords or managing apps. Roles are what let someone change the tenant.")}. Students mix these up all the time.`,
     verify:"Users → SC300-Lab-Helpdesk → <b>Licenses</b> (shows Entra ID P2, read-only here) and <b>Assigned roles</b> (empty). Audit logs → filter Target = sc300-lab-helpdesk.",
@@ -416,7 +419,7 @@ const DAYS = [
     subj:"Resource group and budget before anyone builds VMs",
     body:`<p>The hybrid lab on Day 1 uses paid VMs. Before anyone builds one, please create a resource group and a monthly <b>budget</b> with email alerts, so a forgotten VM can't quietly run up a bill.</p>`,
     tasks:[
-      "Azure portal → Resource groups → Create: name <code>rg-sc300-lab</code>, a region near you.",
+      "Azure portal → Resource groups → Create: name <code>rg-sc300-lab</code>, region <b>East US 2</b> (the region the course uses, if your subscription offers it). Don't add any VMs yet.",
       "Cost Management + Billing → Cost Management → Budgets → Add (scope: your subscription). Name <code>budget-sc300-lab</code>, reset period Monthly, an amount you're comfortable with.",
       "Add alert conditions on <b>Actual</b> cost at 50%, 80% and 100%, sent to an email address you read."
     ],
@@ -501,11 +504,12 @@ const DAYS = [
     tasks:[
       "Identity → Users → New user: <code>lab.user1@{d}</code>. In Properties, set Department = Sales and Job title = Sales Associate.",
       "Identity → Groups → New group, twice: <b>Security</b> groups <code>GRP-Sales</code> and <code>GRP-Sales-Shared</code>, membership type Assigned. Add lab.user1 as a <b>member</b> of both.",
+      "Groups → GRP-Sales → <b>Owners</b>: lab.user1 should <b>not</b> be listed, because a member isn't an owner. Then Properties: <i>Microsoft Entra roles can be assigned to the group</i> = <b>No</b>.",
       "Admin units → AU-Lab → Users → Add member → lab.user1.",
       "Private window: sign in as SC300-Lab-Helpdesk. Reset lab.user1's password (should work), then try SC300-Lab-Admin's (should fail)."
     ],
-    hint:`This is the ${T("joiner","Joiner–mover–leaver (JML): the three moments in an employee's lifecycle where access must be granted, changed or removed. lab.user1 goes through all three in this course.")} step. Keep a note of everything you grant. Tomorrow, someone has to take it away again.`,
-    verify:"Users → lab.user1 → <b>Groups</b> (two groups) and <b>Administrative units</b> (AU-Lab). Audit logs → filter Initiated by = sc300-lab-helpdesk to see Taylor's reset.",
+    hint:`This is the ${T("joiner","Joiner–mover–leaver (JML): the three moments in an employee's lifecycle where access must be granted, changed or removed. lab.user1 goes through all three in this course.")} step. Keep a note of everything you grant. Tomorrow, someone has to take it away again. Being a member of a group, or even its owner, doesn't make anyone a tenant admin, unless it's a ${T("role-assignable group","Created with 'Microsoft Entra roles can be assigned to the group' turned on. Its members inherit the roles assigned to the group, so only Privileged Role Admins and Global Admins can manage its membership.")}.`,
+    verify:"Users → lab.user1 → <b>Groups</b> (two groups) and <b>Administrative units</b> (AU-Lab). GRP-Sales → Members lists lab.user1, Owners doesn't. Audit logs → filter Initiated by = sc300-lab-helpdesk to see Taylor's reset.",
     learn:["au","audit"],
     evidence:{
       audit:[["Core Directory","Add user","you","lab.user1@{d}"],["Core Directory","Add group","you","GRP-Sales, GRP-Sales-Shared"],["Core Directory","Add member to group","you","lab.user1 → GRP-Sales, GRP-Sales-Shared"],["Core Directory","Add member to administrative unit","you","lab.user1 → AU-Lab"],["Self-service Password Management","Reset password (by admin)","sc300-lab-helpdesk@{d}","lab.user1"]],
@@ -594,25 +598,29 @@ const DAYS = [
 
   { id:"t17", type:"RITM", cat:"Hybrid identity", sub:"Directory sync", ci:"Entra Cloud Sync",
     from:"Priya Natarajan, IT Manager", pri:"P3", legit:true, optional:true,
-    subj:"(Optional, paid) Hybrid lab: sync an on-prem user with Cloud Sync",
-    body:`<p>If you have Azure credit to spare, build a small hybrid lab: one domain controller VM running AD DS, synced to Entra with <b>Entra Cloud Sync</b>.</p>
-      <p><b>This costs money.</b> Keep the VM small, and deallocate it as soon as you're done. Your budget alerts from Day 0 are the safety net, not the plan.</p>`,
+    subj:"(Optional, paid) Hybrid lab: Cloud Sync and a hybrid-joined client",
+    body:`<p>If you have Azure credit to spare, build a small hybrid lab: a domain controller VM running AD DS, synced to Entra with <b>Entra Cloud Sync</b>, plus a Windows client joined to the domain and registered with Entra.</p>
+      <p><b>This costs money.</b> Keep the VMs small, and deallocate them as soon as you're done. The course's walkthrough for this lab is long, so plan more than one session. Your budget alerts from Day 0 are the safety net, not the plan.</p>`,
     tasks:[
-      "Azure portal → create a small Windows Server VM in <code>rg-sc300-lab</code>, promote it to a domain controller for <code>lab.local</code>, and create an AD user <code>alice.onprem</code> in its own OU.",
+      "Azure portal → create a small Windows Server VM in <code>rg-sc300-lab</code>, promote it to a domain controller for <code>lab.local</code>, and in its own OU create an AD user <code>alice.onprem</code> and an AD group <code>GRP-OnPrem-Lab</code> with alice as a member.",
       "Entra admin center → Identity → Hybrid management → Microsoft Entra Connect → Cloud sync → download the provisioning agent and install it on the DC.",
-      "Create a configuration for lab.local, scope it to the OU that holds alice.onprem, set a notification email, and enable it.",
-      "Check the Provisioning logs, then find alice.onprem under Users (<b>On-premises sync enabled</b> = Yes).",
-      "Azure portal → the VM → <b>Stop</b>. Confirm the status shows <b>Stopped (deallocated)</b>."
+      "Create a configuration for lab.local, scope it to the OU that holds alice.onprem and GRP-OnPrem-Lab, set a notification email, and enable it.",
+      "Check the Provisioning logs. <b>Check 1:</b> alice.onprem appears under Users with <b>On-premises sync enabled</b> = Yes. <b>Check 2:</b> GRP-OnPrem-Lab appears under Groups as synced, with alice as a member.",
+      "Create a small Windows client VM in the same virtual network, point its DNS at the DC, and join it to <code>lab.local</code>. <b>Check 3:</b> it signs in with a domain account.",
+      "Register the client with Entra by following your course's Day 1 hybrid-join steps. <b>Check 4:</b> Entra → Devices lists it with join type <b>Microsoft Entra hybrid joined</b>, and not <i>Pending</i>.",
+      "On the client, sign in as a synced user and run <code>dsregcmd /status</code>. <b>Check 5:</b> <code>DomainJoined : YES</code>, <code>AzureAdJoined : YES</code> and <code>AzureAdPrt : YES</code>.",
+      "Azure portal → <b>both</b> VMs → <b>Stop</b>. Confirm each shows <b>Stopped (deallocated)</b>."
     ],
-    hint:"A VM that's only shut down from inside Windows still bills for compute. Stop it from the portal so it shows <i>Stopped (deallocated)</i>.",
-    verify:"Cloud sync → Configurations → lab.local → Status and Provisioning logs. VM → Overview → Status = Stopped (deallocated).",
-    learn:["sync","budget"],
+    hint:`The five checks are separate, because each one can fail on its own: a synced user, a synced group, a domain-joined client, its Entra ${T("hybrid join","The device is joined to on-prem Active Directory and also registered in Microsoft Entra, so cloud policies can recognize it.")} record, and a healthy ${T("PRT","Primary Refresh Token: the long-lived token a joined Windows device holds for single sign-on to Microsoft cloud apps.")}. A VM that's only shut down from inside Windows still bills for compute, so stop each one from the portal.`,
+    verify:"Cloud sync → Configurations → lab.local → Status and Provisioning logs. Entra → Devices → the client's <b>Join type</b> and registration status. <code>dsregcmd /status</code> on the client. Each VM → Overview → Status = Stopped (deallocated).",
+    learn:["sync","hybridjoin","budget"],
     evidence:{
-      audit:[["Core Directory","Add user","Microsoft.Azure.SyncFabric","alice.onprem@{d} (synced from lab.local)"],["Azure Activity Log","Deallocate Virtual Machine","you","DC VM in rg-sc300-lab"]],
-      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"alice.onprem synced. VM deallocated.",
+      audit:[["Core Directory","Add user","Microsoft.Azure.SyncFabric","alice.onprem@{d} (synced from lab.local)"],["Core Directory","Add group","Microsoft.Azure.SyncFabric","GRP-OnPrem-Lab (synced from lab.local)"],["Azure Activity Log","Deallocate Virtual Machine","you","DC VM and client VM in rg-sc300-lab"]],
+      mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Hybrid lab: user and group synced, client joined, VMs deallocated",
         body:`<p>The synced user was created by the sync service, not by you, so check the <b>Initiated by</b> column.</p>
         <p>If sync fails repeatedly, a real Cloud Sync configuration goes into ${T("quarantine","Sync pauses itself after repeated failures, such as bad credentials or a scoping mistake. It retries less often until you fix the cause and restart it.")} and emails the notification address you set. That one is a real-world email.</p>
-        <p>A synced account and its on-prem AD account are related but separate. Disabling one doesn't automatically disable the other until the next sync.</p>` } } }
+        <p>A synced account and its on-prem AD account are related but separate. Disabling one doesn't automatically disable the other until the next sync.</p>
+        <p>The device side is separate from the user side: a client can be domain-joined and still show <i>Pending</i> in Entra, or be registered with no PRT. That's why the course checks each one.</p>` } } }
   ]},
 
 /* ---------------- DAY 2 ---------------- */
@@ -643,7 +651,7 @@ const DAYS = [
     subj:"Can't sign in. Everyone's getting blocked??",
     body:`<p>Hey, nobody can get into anything, and that includes the break-glass test account. It started about 10 minutes ago. Did something change?</p>
       <p>Should I just add everyone to the exclusions on that new MFA policy so people can work?</p><p>Taylor</p>`,
-    trigger:[["Conditional Access","Update conditional access policy","sc300-lab-admin@{d}","CA-Pilot-RequireMFA (state: report-only → on; users: GRP-Support → All users; exclusions removed)",1]],
+    trigger:[["Conditional Access","Update conditional access policy","sc300-lab-admin@{d}","CA-Pilot-RequireMFA (state: report-only → on; users: lab.user1 → All users; exclusions removed)",1]],
     verify:"Audit logs → Activity = <code>Update conditional access policy</code> → open it → <b>Modified properties</b> shows the old and new values. Check who initiated it, and their sign-ins.",
     why:"The audit log's Modified properties tells you exactly what to undo. Break-glass accounts are excluded from Conditional Access so a bad policy can't lock everyone out.",
     learn:["ro","breakglass","audit"],
@@ -652,7 +660,7 @@ const DAYS = [
       ["Set the policy back to Report-only with its original users, restore the break-glass exclusion, then investigate who changed it and why.",1,"Right. Revert using Modified properties, restore the emergency access exclusion, then treat the unapproved change as a possible compromise of SC300-Lab-Admin.","Revert and investigate"],
       ["Delete the policy entirely.",0,"It ends the lockout, but you lose the pilot and nobody investigates who changed it.","Delete the policy and close"]
     ],
-    evidence:{ audit:[["Conditional Access","Update conditional access policy","you","CA-Pilot-RequireMFA (state: on → report-only; users: GRP-Support; exclude breakglass01)"]] },
+    evidence:{ audit:[["Conditional Access","Update conditional access policy","you","CA-Pilot-RequireMFA (state: on → report-only; users: lab.user1; exclude breakglass01)"]] },
     consequence:{ audit:[["Conditional Access","Update conditional access policy","sc300-lab-admin@{d}","CA-Pilot-RequireMFA changed again by the same account",1]],
       toast:"The same admin account changed Conditional Access again. Nobody investigated it." } }
   ],
@@ -717,23 +725,24 @@ const DAYS = [
   { id:"t24", type:"CHG", cat:"Security", sub:"Conditional Access", ci:"Conditional Access",
     from:"Priya Natarajan, IT Manager", pri:"P2", legit:true,
     subj:"Pilot an MFA policy in report-only mode",
-    body:`<p>We want Conditional Access to require MFA for Support, but I don't want to lock anyone out. Please build it in <b>report-only</b> mode, targeting GRP-Support.</p>
+    body:`<p>We want Conditional Access to require MFA, but I don't want to lock anyone out. Please build it in <b>report-only</b> mode, targeting <b>only our pilot user, lab.user1</b>.</p>
       <p>Make sure our ${T("emergency access account","Also called a break-glass account. A cloud-only account with Global Administrator, a long random password kept offline, and no day-to-day use. Excluded from Conditional Access so a bad policy can't lock everyone out.")} can never be caught by it.</p>`,
     tasks:[
       "If you don't have one yet: create <code>breakglass01@{d}</code>, assign it Global Administrator, give it a long random password stored offline, and don't use it day to day.",
-      "Protection → Conditional Access → Policies → New policy: name <code>CA-Pilot-RequireMFA</code>. Users: include GRP-Support. Exclude breakglass01.",
+      "Protection → Conditional Access → Policies → New policy: name <code>CA-Pilot-RequireMFA</code>. Users: include <b>only lab.user1</b>. Exclude breakglass01.",
       "Target resources: All resources. Grant: Require multifactor authentication.",
-      "Enable policy: <b>Report-only</b> → Create.",
-      "Sign in as lab.user1, then open that sign-in event → <b>Report-only</b> tab and find CA-Pilot-RequireMFA's result."
+      "Enable policy: <b>Report-only</b> → Create. Leave it in report-only: don't switch it On for this exercise.",
+      "Conditional Access → <b>What If</b> → user lab.user1 → run. Note what it says CA-Pilot-RequireMFA would do.",
+      "Sign in as lab.user1, then open that sign-in event and compare three things: the top-level result, <b>Authentication details</b>, and the <b>Report-only</b> tab with CA-Pilot-RequireMFA's result. Does it match What If?"
     ],
     hint:"Report-only works even while security defaults is still on. What you can't do is switch a policy <b>On</b>, and once any CA policy exists you can't turn security defaults back on. Moving from security defaults to Conditional Access is a design decision for the tenant owner, because your policies have to replace the protection you'd be switching off. Don't switch it off just to match a screenshot.",
-    verify:"Audit logs → Activity = <code>Add conditional access policy</code> → Modified properties shows the state <code>enabledForReportingButNotEnforced</code>. Also try the <b>What If</b> tool with lab.user1.",
+    verify:"Audit logs → Activity = <code>Add conditional access policy</code> → Modified properties shows the state <code>enabledForReportingButNotEnforced</code>. The real sign-in's Report-only tab should agree with your What If result.",
     learn:["ro","breakglass"],
     evidence:{
       audit:[["Core Directory","Add user","you","breakglass01@{d}"],["Core Directory","Add member to role","you","breakglass01 → Global Administrator"],["Conditional Access","Add conditional access policy","you","CA-Pilot-RequireMFA (state: enabledForReportingButNotEnforced)"]],
       mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"CA-Pilot-RequireMFA created in report-only",
         body:`<p>Report-only policies are evaluated on every matching sign-in, and the result is logged on the sign-in's <b>Report-only</b> tab. Nobody is blocked or prompted.</p>
-        <p>Run it like this for a while, check the results (<i>Report-only: Success / Failure / User action required</i>), and only then switch it on. Note that GRP-Support also contains your guest. Policies apply to guests too.</p>` } } },
+        <p>Run it like this for a while, check the results (<i>Report-only: Success / Failure / User action required</i>), and only then switch it on. Targeting one user keeps a mistake small. Widen a policy to a group only after its report-only results look right, and remember that policies apply to guests too.</p>` } } },
 
   { id:"t25", type:"CHG", cat:"Security", sub:"Security defaults", ci:"Entra ID tenant",
     from:"Marcus Webb, Sales Manager", pri:"P2", legit:false,
@@ -763,10 +772,11 @@ const DAYS = [
     tasks:[
       "Identity → Applications → Enterprise applications → New application → search <i>Microsoft Entra SAML Toolkit</i> → Create.",
       "Single sign-on → SAML → fill in the Basic SAML Configuration as the toolkit's setup page describes. Under SAML Certificates, add a <b>notification email</b>.",
+      "Single sign-on → <b>Attributes &amp; Claims</b>: check the <b>Unique User Identifier (Name ID)</b> is <code>user.userprincipalname</code>, and that the user account you set up in the toolkit uses the same value.",
       "Properties → <b>Assignment required?</b> = Yes → Save. Users and groups → Add user/group → SC300-Lab-Helpdesk.",
-      "Test in private windows: Taylor gets in. lab.user1 is refused with error <code>AADSTS50105</code>."
+      "Test in private windows: Taylor completes a successful SAML sign-in to the toolkit. lab.user1 is refused with error <code>AADSTS50105</code>."
     ],
-    hint:"<code>AADSTS50105</code> means the user isn't assigned to the app. The password was fine, so don't reset it. Read the error code before you change anything.",
+    hint:`<code>AADSTS50105</code> means the user isn't assigned to the app. The password was fine, so don't reset it. Read the error code before you change anything. A ${T("NameID","The user identifier inside the SAML assertion. The app uses it to decide which of its own accounts the person is.")} mismatch fails differently: Entra signs the user in, but the app can't find a matching account.`,
     verify:"Sign-in logs → lab.user1 → the SAML Toolkit failure → Basic info → <b>Failure reason</b>. Enterprise app → Users and groups shows only Taylor.",
     learn:["assignapp","samlcert"],
     evidence:{
@@ -793,7 +803,8 @@ const DAYS = [
       audit:[["Core Directory","Add application","you","SC300-Graph-Lab"],["Core Directory","Add service principal","you","SC300-Graph-Lab"],["Core Directory","Update application","you","SC300-Graph-Lab (public client flows enabled)"]],
       mail:{ from:"Lab Inbox (audit digest)", tag:"sim", subj:"Two objects, one app: blueprint and instance",
         body:`<p>The <b>application</b> is the blueprint. The <b>service principal</b> is the instance in your tenant.</p>
-        <p>When a multi-tenant app is used by another organization, only a service principal is created there. That's why consent and assignments are managed under Enterprise applications.</p>` } } },
+        <p>When a multi-tenant app is used by another organization, only a service principal is created there. That's why consent and assignments are managed under Enterprise applications.</p>
+        <p><b>Day 3 pass check:</b> before the day ends, explain in your own words the difference between a person, an app registration, a service principal, a SAML assertion and a delegated access token.</p>` } } },
 
   { id:"t33", type:"RITM", cat:"Applications", sub:"Testing", ci:"SC300-Graph-Lab",
     from:"Alex Moreno, Developer", pri:"P3", legit:true,
@@ -801,12 +812,12 @@ const DAYS = [
     body:`<p>Please run <code>graph-profile.py</code> with the client ID and tenant ID and sign in as <b>lab.user1</b> using the device code. It calls <code>GET /me</code> and then <code>GET /users</code>.</p>
       <p>Tell me the HTTP status of each call.</p>`,
     tasks:[
-      "Install Python, then the libraries the script needs (it uses MSAL). The course materials list them.",
+      "Get <code>graph-profile.py</code> from your course files (<code>day-03/lab-03/</code>). Install Python, then the libraries the script needs (it uses MSAL). The course materials list them.",
       "Run the script, open the device login page it prints, enter the code, and sign in as lab.user1.",
       "Record the results: <code>/me</code> → 200 and <code>/users</code> → 403.",
       "Sign-in logs → lab.user1 → Application = SC300-Graph-Lab → check the <b>Authentication protocol</b> shows device code."
     ],
-    hint:`<code>graph-profile.py</code> comes with the course materials. Any ${T("device code","A sign-in flow for devices without a browser: the app shows a code, and the user enters it on a separate device. Attackers also abuse it in phishing, so many organizations restrict it with Conditional Access.")} sample that calls /me and /users works too.`,
+    hint:`<code>graph-profile.py</code> comes with the course materials. Any ${T("device code","A sign-in flow for devices without a browser: the app shows a code, and the user enters it on a separate device. Attackers also abuse it in phishing, so many organizations restrict it with Conditional Access.")} sample that calls /me and /users works too. Graph Explorer is fine for a quick look at <code>/me</code>, but it signs in as its own app, so it can't test <i>your</i> app's permissions.`,
     verify:"Sign-in logs → lab.user1 → filter Application = SC300-Graph-Lab → Authentication details and Resource (Microsoft Graph).",
     learn:["devicecode","graph"],
     evidence:{
