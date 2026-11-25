@@ -4,7 +4,7 @@ A service-desk simulator for practising **Microsoft Entra ID identity and access
 
 Lab guides tell you what to click. Real IAM work starts with a request from a person, and the hard part is deciding whether to do it at all. The Lab Inbox turns each lab exercise into a service-desk ticket. You do the work in your own Entra lab tenant, close the ticket, and find the audit-log evidence your change left behind. Some tickets are traps you should refuse.
 
-**[Try it live](https://notwalnomad.github.io/sc300-lab-inbox/)** · **[Setup guide](docs/setup-guide.html)**
+**[Try it live](https://notwalnomad.github.io/sc300-lab/)** · **[Setup guide](docs/setup-guide.html)**
 
 > Training simulation. Every person, company and sender is fictional. The app runs entirely in your browser and never connects to a real tenant.
 
