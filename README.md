@@ -7,6 +7,8 @@ Lab guides tell you what to click. Real IAM work starts with a request from a pe
 **[Try it live](https://notwalnomad.github.io/sc300-lab/)** · **[Setup guide](docs/setup-guide.html)**
 
 > Training simulation. Every person, company and sender is fictional. The app runs entirely in your browser and never connects to a real tenant.
+>
+> **Unofficial, student-made practice companion.** Not affiliated with Microsoft or any course provider. Use it alongside your own course materials, not instead of them.
 
 ## What's inside
 
